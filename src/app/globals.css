@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+/* Static tokens pulled directly from ahmdgpt.com's live :root custom properties. */
+@theme {
+  --color-bg: #0a0a0c;
+  --color-surface: #141014;
+  --color-surface-2: #0f0c10;
+  --color-border: #2a1a1d;
+  --color-border-soft: rgba(255, 255, 255, 0.08);
+  --color-text: #f2edee;
+  --color-muted: #8a7c7e;
+  --color-muted-2: #5a4a4d;
+  --color-accent: #ff2a3c;
+  --color-accent-light: #ff5a68;
+  --color-gold: #d4a853;
+  --color-green: #00ff85;
+  --color-warning: #f5a623;
+
+  --ease-brand: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Font tokens reference next/font's runtime CSS variables set on <html>. */
+@theme inline {
+  --font-display: var(--font-display-raw), "Syne", system-ui, sans-serif;
+  --font-sans: var(--font-sans-raw), "Inter", system-ui, sans-serif;
+  --font-mono: var(--font-mono-raw), "JetBrains Mono", ui-monospace, monospace;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+}
+
+::selection {
+  background: rgba(255, 42, 60, 0.35);
+  color: var(--color-text);
+}
+
+.bg-accent-glow {
+  background: radial-gradient(
+    ellipse at 50% 100%,
+    rgba(180, 0, 0, 0.55) 0%,
+    rgba(100, 0, 0, 0.25) 35%,
+    rgba(5, 5, 5, 0) 70%
+  );
+}
+
+.status-dot {
+  position: relative;
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.status-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--color-accent);
+  animation: status-pulse 1.8s var(--ease-brand) infinite;
+}
+
+@keyframes status-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+
+* {
+  scrollbar-color: var(--color-border) var(--color-surface);
+}

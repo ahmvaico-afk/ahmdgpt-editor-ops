@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SubmissionStatus {
+  submitted
+  approved
+  paid
+  rejected
+}
+
+model Editor {
+  id          String            @id @default(uuid())
+  name        String
+  editorCode  String            @unique
+  pinHash     String
+  active      Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  submissions VideoSubmission[]
+}
+
+model AdminUser {
+  id        String   @id @default(uuid())
+  name      String
+  loginCode String   @unique
+  pinHash   String
+  role      String   @default("owner")
+  createdAt DateTime @default(now())
+}
+
+model VideoStyle {
+  id                      String            @id @default(uuid())
+  name                    String
+  isCustomPricing         Boolean           @default(false)
+  ratePerMinuteCents      Int?
+  /// Step pricing: when > 0, ratePerMinuteCents becomes a flat base covering the first minute, and each additional minute adds this flat amount (1 min = rate, 2 min = rate+this, 3 min = rate+2x this...). 0 = ratePerMinuteCents is a plain per-minute rate (duration x rate).
+  perMinuteIncrementCents Int               @default(0)
+  active                  Boolean           @default(true)
+  sortOrder               Int               @default(0)
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  submissions             VideoSubmission[]
+}
+
+model VideoSubmission {
+  id                   String           @id @default(uuid())
+  editorId             String
+  editor               Editor           @relation(fields: [editorId], references: [id])
+  styleId              String
+  style                VideoStyle       @relation(fields: [styleId], references: [id])
+  styleName            String
+  title                String
+  clientOrProject      String?
+  videoLink            String
+  durationMinutes      Float
+  pricePerMinuteCents  Int
+  calculatedPriceCents Int
+  status               SubmissionStatus @default(submitted)
+  submittedAt          DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  notes                String?
+
+  @@index([editorId])
+  @@index([styleId])
+  @@index([status])
+  @@index([submittedAt])
+}

@@ -1,0 +1,45 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { EyeLogo } from "@/components/eye-logo";
+import { LogoutButton } from "@/components/nav/logout-button";
+
+const LINKS = [
+  { href: "/admin/dashboard", label: "Dashboard" },
+  { href: "/admin/styles", label: "Styles" },
+  { href: "/admin/editors", label: "Editors" },
+];
+
+export function AdminHeader() {
+  const pathname = usePathname();
+
+  return (
+    <header className="sticky top-0 z-40 border-b border-border bg-bg/90 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div className="flex items-center gap-8">
+          <Link href="/admin/dashboard" className="flex items-center gap-2">
+            <EyeLogo className="h-6 w-6 text-text" />
+            <span className="font-display text-sm font-extrabold tracking-tight text-text">
+              AHMD.GPT
+            </span>
+          </Link>
+          <nav className="flex items-center gap-5">
+            {LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`font-mono text-[11px] uppercase tracking-wider transition-colors ${
+                  pathname === link.href ? "text-accent" : "text-muted hover:text-text"
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+        <LogoutButton redirectTo="/admin" />
+      </div>
+    </header>
+  );
+}

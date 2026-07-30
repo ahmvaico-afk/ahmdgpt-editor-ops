@@ -1,0 +1,187 @@
+"use client";
+
+import { useState } from "react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
+import { formatCents } from "@/lib/pricing";
+import { Card } from "@/components/ui/card";
+import { Select } from "@/components/ui/input";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { SummaryCards } from "@/components/admin/summary-cards";
+import type { AdminEditor, Style, Submission, SubmissionStatus } from "@/lib/types";
+
+const STATUSES: SubmissionStatus[] = ["submitted", "approved", "paid", "rejected"];
+
+export function AdminDashboardClient() {
+  const [editorId, setEditorId] = useState("");
+  const [styleId, setStyleId] = useState("");
+  const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
+
+  const { data: editorsData } = useSWR<{ editors: AdminEditor[] }>(
+    "/api/admin/editors",
+    fetcher
+  );
+  const { data: stylesData } = useSWR<{ styles: Style[] }>("/api/admin/styles", fetcher);
+
+  const params = new URLSearchParams();
+  if (editorId) params.set("editorId", editorId);
+  if (styleId) params.set("styleId", styleId);
+  if (status) params.set("status", status);
+  params.set("page", String(page));
+
+  const { data, mutate } = useSWR<{ items: Submission[]; total: number; pageSize: number }>(
+    `/api/submissions?${params.toString()}`,
+    fetcher,
+    { refreshInterval: 6000 }
+  );
+
+  const editors = editorsData?.editors ?? [];
+  const styles = stylesData?.styles ?? [];
+  const items = data?.items ?? [];
+  const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
+
+  async function updateStatus(id: string, next: SubmissionStatus) {
+    await fetch(`/api/submissions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: next }),
+    });
+    mutate();
+  }
+
+  return (
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 py-8">
+      <h1 className="font-display text-2xl font-extrabold text-text">Master Dashboard</h1>
+
+      <SummaryCards />
+
+      <Card className="flex flex-wrap items-end gap-3 p-4">
+        <FilterField label="Editor">
+          <Select
+            value={editorId}
+            onChange={(e) => {
+              setEditorId(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">All editors</option>
+            {editors.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.name}
+              </option>
+            ))}
+          </Select>
+        </FilterField>
+        <FilterField label="Style">
+          <Select
+            value={styleId}
+            onChange={(e) => {
+              setStyleId(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">All styles</option>
+            {styles.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </Select>
+        </FilterField>
+        <FilterField label="Status">
+          <Select
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">All statuses</option>
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </Select>
+        </FilterField>
+      </Card>
+
+      <Card className="divide-y divide-border">
+        {items.length === 0 && (
+          <p className="p-6 text-center text-sm text-muted">No submissions match these filters.</p>
+        )}
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-text">{item.title}</p>
+              <p className="mt-0.5 truncate font-mono text-xs text-muted">
+                {item.editor?.name ?? "—"} · {item.styleName} ·{" "}
+                {new Date(item.submittedAt).toLocaleDateString()}
+              </p>
+              <a
+                href={item.videoLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-0.5 inline-block font-mono text-xs text-accent hover:text-accent-light"
+              >
+                View video →
+              </a>
+            </div>
+            <div className="flex shrink-0 items-center gap-3">
+              <span className="font-mono text-sm text-text">
+                {formatCents(item.calculatedPriceCents)}
+              </span>
+              <Select
+                value={item.status}
+                onChange={(e) => updateStatus(item.id, e.target.value as SubmissionStatus)}
+                className="!w-auto py-1.5 text-xs"
+              >
+                {STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </Select>
+              <StatusBadge status={item.status} />
+            </div>
+          </div>
+        ))}
+      </Card>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-4">
+          <button
+            disabled={page <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            className="font-mono text-xs text-muted disabled:opacity-30 hover:text-text"
+          >
+            ← Prev
+          </button>
+          <span className="font-mono text-xs text-muted">
+            Page {page} of {totalPages}
+          </span>
+          <button
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            className="font-mono text-xs text-muted disabled:opacity-30 hover:text-text"
+          >
+            Next →
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="font-mono text-[10px] uppercase tracking-wider text-muted">{label}</span>
+      {children}
+    </div>
+  );
+}
