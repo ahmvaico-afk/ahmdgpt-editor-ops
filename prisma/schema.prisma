@@ -51,7 +51,7 @@ model VideoStyle {
 model VideoSubmission {
   id                   String           @id @default(uuid())
   editorId             String
-  editor               Editor           @relation(fields: [editorId], references: [id])
+  editor               Editor           @relation(fields: [editorId], references: [id], onDelete: Cascade)
   styleId              String
   style                VideoStyle       @relation(fields: [styleId], references: [id])
   styleName            String

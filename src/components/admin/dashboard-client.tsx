@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { formatCents } from "@/lib/pricing";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { SummaryCards } from "@/components/admin/summary-cards";
@@ -131,22 +132,48 @@ export function AdminDashboardClient() {
                 View video →
               </a>
             </div>
-            <div className="flex shrink-0 items-center gap-3">
-              <span className="font-mono text-sm text-text">
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="mr-1 font-mono text-sm text-text">
                 {formatCents(item.calculatedPriceCents)}
               </span>
-              <Select
-                value={item.status}
-                onChange={(e) => updateStatus(item.id, e.target.value as SubmissionStatus)}
-                className="!w-auto py-1.5 text-xs"
-              >
-                {STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </Select>
               <StatusBadge status={item.status} />
+              {item.status === "submitted" && (
+                <>
+                  <Button size="sm" onClick={() => updateStatus(item.id, "approved")}>
+                    Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => updateStatus(item.id, "rejected")}
+                  >
+                    Reject
+                  </Button>
+                </>
+              )}
+              {item.status === "approved" && (
+                <>
+                  <Button size="sm" onClick={() => updateStatus(item.id, "paid")}>
+                    Mark Paid
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => updateStatus(item.id, "rejected")}
+                  >
+                    Reject
+                  </Button>
+                </>
+              )}
+              {item.status === "rejected" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => updateStatus(item.id, "submitted")}
+                >
+                  Reconsider
+                </Button>
+              )}
             </div>
           </div>
         ))}

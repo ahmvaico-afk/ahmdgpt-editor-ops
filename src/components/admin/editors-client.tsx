@@ -57,6 +57,20 @@ export function EditorsClient() {
     mutate();
   }
 
+  async function deleteEditor(editor: AdminEditor) {
+    const submissionNote =
+      editor._count.submissions > 0
+        ? ` This also permanently deletes their ${editor._count.submissions} submission(s).`
+        : "";
+    if (
+      !confirm(`Delete ${editor.name} (${editor.editorCode})?${submissionNote} This can't be undone.`)
+    ) {
+      return;
+    }
+    await fetch(`/api/admin/editors/${editor.id}`, { method: "DELETE" });
+    mutate();
+  }
+
   async function submitResetPin(editorId: string) {
     if (resetPin.length < 4) return;
     await fetch(`/api/admin/editors/${editorId}`, {
@@ -124,6 +138,14 @@ export function EditorsClient() {
               }`}
             >
               {editor.active ? "Active" : "Inactive"}
+            </button>
+
+            <button
+              onClick={() => deleteEditor(editor)}
+              aria-label="Delete editor"
+              className="text-muted transition-colors hover:text-accent"
+            >
+              Delete
             </button>
           </div>
         ))}

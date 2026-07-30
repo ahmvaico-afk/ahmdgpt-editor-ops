@@ -30,3 +30,17 @@ export async function PATCH(
   const editor = await prisma.editor.update({ where: { id }, data: update });
   return NextResponse.json({ editor });
 }
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await requireAdminSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  const { id } = await params;
+  await prisma.editor.delete({ where: { id } });
+  return NextResponse.json({ ok: true });
+}

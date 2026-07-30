@@ -31,6 +31,12 @@ export function DashboardClient({ editorName }: { editorName: string }) {
     mutateSubmissions();
   }
 
+  async function removeSubmission(id: string) {
+    if (!confirm("Remove this video? This can't be undone.")) return;
+    await fetch(`/api/submissions/${id}`, { method: "DELETE" });
+    refreshAll();
+  }
+
   const styles = stylesData?.styles ?? [];
   const items = submissionsData?.items ?? [];
 
@@ -88,6 +94,15 @@ export function DashboardClient({ editorName }: { editorName: string }) {
                 {formatCents(item.calculatedPriceCents)}
               </span>
               <StatusBadge status={item.status} />
+              {item.status === "submitted" && (
+                <button
+                  onClick={() => removeSubmission(item.id)}
+                  aria-label="Remove video"
+                  className="text-muted transition-colors hover:text-accent"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </div>
         ))}
