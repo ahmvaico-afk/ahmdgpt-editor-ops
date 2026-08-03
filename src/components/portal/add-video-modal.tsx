@@ -5,6 +5,7 @@ import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { calculatePriceCents, formatCents } from "@/lib/pricing";
+import { minutesSecondsToDecimal } from "@/lib/duration";
 import type { Style } from "@/lib/types";
 
 export function AddVideoModal({
@@ -23,7 +24,8 @@ export function AddVideoModal({
   const [title, setTitle] = useState("");
   const [clientOrProject, setClientOrProject] = useState("");
   const [videoLink, setVideoLink] = useState("");
-  const [duration, setDuration] = useState("");
+  const [durationMin, setDurationMin] = useState("");
+  const [durationSec, setDurationSec] = useState("");
   const [rate, setRate] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -41,9 +43,14 @@ export function AddVideoModal({
     effectiveIncrementCents = selectedStyle?.perMinuteIncrementCents ?? 0;
   }
 
-  const parsedDuration = parseFloat(duration);
+  const minPart = parseInt(durationMin || "0", 10);
+  const secPart = parseInt(durationSec || "0", 10);
+  const parsedDuration =
+    durationMin === "" && durationSec === ""
+      ? NaN
+      : minutesSecondsToDecimal(minPart, secPart);
   const livePriceCents =
-    Number.isFinite(parsedDuration) && effectiveRateCents !== null
+    Number.isFinite(parsedDuration) && parsedDuration > 0 && effectiveRateCents !== null
       ? calculatePriceCents(parsedDuration, effectiveRateCents, effectiveIncrementCents)
       : null;
 
@@ -51,7 +58,8 @@ export function AddVideoModal({
     setTitle("");
     setClientOrProject("");
     setVideoLink("");
-    setDuration("");
+    setDurationMin("");
+    setDurationSec("");
     setRate("");
     setNotes("");
     setError(null);
@@ -75,7 +83,7 @@ export function AddVideoModal({
           clientOrProject,
           videoLink,
           notes,
-          durationMinutes: parseFloat(duration),
+          durationMinutes: parsedDuration,
           ...(selectedStyle.isCustomPricing
             ? { customRatePerMinuteDollars: parseFloat(rate) }
             : {}),
@@ -138,19 +146,41 @@ export function AddVideoModal({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label>Duration (min)</Label>
+        <div>
+          <Label>Duration</Label>
+          <div className="flex items-center gap-2">
             <Input
               type="number"
-              inputMode="decimal"
+              inputMode="numeric"
               min="0"
-              step="0.1"
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
+              step="1"
+              placeholder="0"
+              value={durationMin}
+              onChange={(e) => setDurationMin(e.target.value)}
               required
+              className="text-center"
             />
+            <span className="shrink-0 text-xs text-muted">min</span>
+            <Input
+              type="number"
+              inputMode="numeric"
+              min="0"
+              max="59"
+              step="1"
+              placeholder="0"
+              value={durationSec}
+              onChange={(e) =>
+                setDurationSec(
+                  e.target.value === "" ? "" : String(Math.min(59, Math.max(0, Number(e.target.value))))
+                )
+              }
+              className="text-center"
+            />
+            <span className="shrink-0 text-xs text-muted">sec</span>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1">
           {selectedStyle?.isCustomPricing ? (
             <div>
               <Label>Rate (Rs/min)</Label>

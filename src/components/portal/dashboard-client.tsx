@@ -4,6 +4,7 @@ import { useState } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { formatCents } from "@/lib/pricing";
+import { formatDuration } from "@/lib/duration";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -84,7 +85,7 @@ export function DashboardClient({ editorName }: { editorName: string }) {
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-text">{item.title}</p>
               <p className="mt-0.5 truncate font-mono text-xs text-muted">
-                {item.styleName}
+                {item.styleName} · {formatDuration(item.durationMinutes)}
                 {item.clientOrProject ? ` · ${item.clientOrProject}` : ""} ·{" "}
                 {new Date(item.submittedAt).toLocaleDateString()}
               </p>

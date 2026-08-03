@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { SummaryCards } from "@/components/admin/summary-cards";
-import type { AdminEditor, Style, Submission, SubmissionStatus } from "@/lib/types";
+import { BatchManager } from "@/components/admin/batch-manager";
+import { formatDuration } from "@/lib/duration";
+import type { AdminEditor, BatchInfo, Style, Submission, SubmissionStatus } from "@/lib/types";
 
 const STATUSES: SubmissionStatus[] = ["submitted", "approved", "paid", "rejected"];
 
@@ -17,6 +19,7 @@ export function AdminDashboardClient() {
   const [editorId, setEditorId] = useState("");
   const [styleId, setStyleId] = useState("");
   const [status, setStatus] = useState("");
+  const [batch, setBatch] = useState("");
   const [page, setPage] = useState(1);
 
   const { data: editorsData } = useSWR<{ editors: AdminEditor[] }>(
@@ -24,11 +27,16 @@ export function AdminDashboardClient() {
     fetcher
   );
   const { data: stylesData } = useSWR<{ styles: Style[] }>("/api/admin/styles", fetcher);
+  const { data: batchesData, mutate: mutateBatches } = useSWR<{
+    currentBatch: number;
+    batches: BatchInfo[];
+  }>("/api/admin/batches", fetcher, { refreshInterval: 10000 });
 
   const params = new URLSearchParams();
   if (editorId) params.set("editorId", editorId);
   if (styleId) params.set("styleId", styleId);
   if (status) params.set("status", status);
+  if (batch) params.set("batch", batch);
   params.set("page", String(page));
 
   const { data, mutate } = useSWR<{ items: Submission[]; total: number; pageSize: number }>(
@@ -39,6 +47,7 @@ export function AdminDashboardClient() {
 
   const editors = editorsData?.editors ?? [];
   const styles = stylesData?.styles ?? [];
+  const batches = batchesData?.batches ?? [];
   const items = data?.items ?? [];
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
@@ -57,7 +66,30 @@ export function AdminDashboardClient() {
 
       <SummaryCards />
 
+      <BatchManager
+        onChanged={() => {
+          mutate();
+          mutateBatches();
+        }}
+      />
+
       <Card className="flex flex-wrap items-end gap-3 p-4">
+        <FilterField label="Batch">
+          <Select
+            value={batch}
+            onChange={(e) => {
+              setBatch(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">All batches</option>
+            {batches.map((b) => (
+              <option key={b.number} value={b.number}>
+                Batch {b.number} ({b.count})
+              </option>
+            ))}
+          </Select>
+        </FilterField>
         <FilterField label="Editor">
           <Select
             value={editorId}
@@ -118,11 +150,23 @@ export function AdminDashboardClient() {
             className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
           >
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-text">{item.title}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="truncate text-sm font-medium text-text">{item.title}</p>
+                <span className="shrink-0 rounded-full border border-border px-2 py-0.5 font-mono text-[10px] text-muted">
+                  Batch {item.batchNumber}
+                </span>
+              </div>
               <p className="mt-0.5 truncate font-mono text-xs text-muted">
                 {item.editor?.name ?? "—"} · {item.styleName} ·{" "}
+                {formatDuration(item.durationMinutes)}
+                {item.clientOrProject ? ` · ${item.clientOrProject}` : ""} ·{" "}
                 {new Date(item.submittedAt).toLocaleDateString()}
               </p>
+              {item.notes && (
+                <p className="mt-0.5 truncate text-xs italic text-muted-2">
+                  &ldquo;{item.notes}&rdquo;
+                </p>
+              )}
               <a
                 href={item.videoLink}
                 target="_blank"

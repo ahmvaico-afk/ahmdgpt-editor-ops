@@ -4,8 +4,7 @@ type Variant = "primary" | "outline" | "ghost" | "danger";
 type Size = "sm" | "md" | "lg";
 
 const variantClasses: Record<Variant, string> = {
-  primary:
-    "bg-accent text-white hover:bg-accent-light shadow-[0_0_24px_rgba(255,42,60,0.25)]",
+  primary: "bg-accent text-white hover:bg-accent-light shadow-accent-glow",
   outline:
     "border border-accent text-text hover:bg-accent/10",
   ghost: "text-muted hover:text-text hover:bg-white/5",
@@ -18,16 +17,27 @@ const sizeClasses: Record<Size, string> = {
   lg: "px-7 py-3.5 text-base",
 };
 
+const baseClasses =
+  "inline-flex items-center justify-center gap-2 rounded-full font-medium transition-colors duration-200 ease-brand disabled:opacity-40 disabled:pointer-events-none cursor-pointer";
+
+/**
+ * Button styling as a plain string, so elements that can't be a `<button>`
+ * (download links, for one) still render identically.
+ */
+export function buttonClasses({
+  variant = "primary",
+  size = "md",
+  className = "",
+}: { variant?: Variant; size?: Size; className?: string } = {}) {
+  return `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;
+}
+
 export const Button = forwardRef<
   HTMLButtonElement,
   ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: Size }
 >(({ className = "", variant = "primary", size = "md", ...props }, ref) => {
   return (
-    <button
-      ref={ref}
-      className={`inline-flex items-center justify-center gap-2 rounded-full font-medium transition-colors duration-200 ease-brand disabled:opacity-40 disabled:pointer-events-none cursor-pointer ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
-      {...props}
-    />
+    <button ref={ref} className={buttonClasses({ variant, size, className })} {...props} />
   );
 });
 Button.displayName = "Button";

@@ -16,39 +16,36 @@ export async function GET() {
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  const [
-    videosThisWeek,
-    videosThisMonth,
-    owed,
-    paidOut,
-    byStyle,
-    topEditors,
-  ] = await Promise.all([
-    prisma.videoSubmission.count({ where: { submittedAt: { gte: startOfWeek } } }),
-    prisma.videoSubmission.count({ where: { submittedAt: { gte: startOfMonth } } }),
-    prisma.videoSubmission.aggregate({
-      where: { status: { in: ["submitted", "approved"] } },
-      _sum: { calculatedPriceCents: true },
-      _count: true,
-    }),
-    prisma.videoSubmission.aggregate({
-      where: { status: "paid" },
-      _sum: { calculatedPriceCents: true },
-      _count: true,
-    }),
-    prisma.videoSubmission.groupBy({
-      by: ["styleName"],
-      _sum: { calculatedPriceCents: true },
-      _count: true,
-      orderBy: { _count: { styleName: "desc" } },
-    }),
-    prisma.videoSubmission.groupBy({
-      by: ["editorId"],
-      _count: true,
-      orderBy: { _count: { editorId: "desc" } },
-      take: 5,
-    }),
-  ]);
+  // Sequential, not Promise.all: concurrent queries through the pg driver
+  // adapter's shared pool can corrupt prepared statements under load.
+  const videosThisWeek = await prisma.videoSubmission.count({
+    where: { submittedAt: { gte: startOfWeek } },
+  });
+  const videosThisMonth = await prisma.videoSubmission.count({
+    where: { submittedAt: { gte: startOfMonth } },
+  });
+  const owed = await prisma.videoSubmission.aggregate({
+    where: { status: { in: ["submitted", "approved"] } },
+    _sum: { calculatedPriceCents: true },
+    _count: true,
+  });
+  const paidOut = await prisma.videoSubmission.aggregate({
+    where: { status: "paid" },
+    _sum: { calculatedPriceCents: true },
+    _count: true,
+  });
+  const byStyle = await prisma.videoSubmission.groupBy({
+    by: ["styleName"],
+    _sum: { calculatedPriceCents: true },
+    _count: true,
+    orderBy: { _count: { styleName: "desc" } },
+  });
+  const topEditors = await prisma.videoSubmission.groupBy({
+    by: ["editorId"],
+    _count: true,
+    orderBy: { _count: { editorId: "desc" } },
+    take: 5,
+  });
 
   const editorIds = topEditors.map((t) => t.editorId);
   const editors = await prisma.editor.findMany({

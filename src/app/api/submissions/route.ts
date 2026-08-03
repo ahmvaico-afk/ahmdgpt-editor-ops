@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { createSubmissionSchema } from "@/lib/validation";
 import { calculatePriceCents, dollarsToCents } from "@/lib/pricing";
+import { getCurrentBatch } from "@/lib/batch";
 import type { Prisma } from "@/generated/prisma/client";
 
 const PAGE_SIZE = 25;
@@ -24,12 +25,14 @@ export async function GET(request: NextRequest) {
     const editorId = url.searchParams.get("editorId");
     const styleId = url.searchParams.get("styleId");
     const status = url.searchParams.get("status");
+    const batch = url.searchParams.get("batch");
     const from = url.searchParams.get("from");
     const to = url.searchParams.get("to");
 
     if (editorId) where.editorId = editorId;
     if (styleId) where.styleId = styleId;
     if (status) where.status = status as Prisma.EnumSubmissionStatusFilter["equals"];
+    if (batch) where.batchNumber = Number(batch);
     if (from || to) {
       where.submittedAt = {
         ...(from ? { gte: new Date(from) } : {}),
@@ -38,16 +41,16 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const [items, total] = await Promise.all([
-    prisma.videoSubmission.findMany({
-      where,
-      include: { editor: { select: { name: true, editorCode: true } } },
-      orderBy: { submittedAt: "desc" },
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-    }),
-    prisma.videoSubmission.count({ where }),
-  ]);
+  // Sequential, not Promise.all: concurrent queries through the pg driver
+  // adapter's shared pool can corrupt prepared statements under load.
+  const items = await prisma.videoSubmission.findMany({
+    where,
+    include: { editor: { select: { name: true, editorCode: true } } },
+    orderBy: { submittedAt: "desc" },
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
+  });
+  const total = await prisma.videoSubmission.count({ where });
 
   return NextResponse.json({ items, total, page, pageSize: PAGE_SIZE });
 }
@@ -99,6 +102,8 @@ export async function POST(request: NextRequest) {
     incrementPerMinuteCents
   );
 
+  const batchNumber = await getCurrentBatch();
+
   const submission = await prisma.videoSubmission.create({
     data: {
       editorId: session.editorId,
@@ -110,6 +115,7 @@ export async function POST(request: NextRequest) {
       durationMinutes,
       pricePerMinuteCents,
       calculatedPriceCents,
+      batchNumber,
       notes: data.notes || null,
     },
   });

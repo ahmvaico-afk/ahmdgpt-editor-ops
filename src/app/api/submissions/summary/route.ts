@@ -12,24 +12,24 @@ export async function GET() {
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  const [all, thisMonth, byStatus] = await Promise.all([
-    prisma.videoSubmission.aggregate({
-      where: { editorId: session.editorId },
-      _sum: { calculatedPriceCents: true },
-      _count: true,
-    }),
-    prisma.videoSubmission.aggregate({
-      where: { editorId: session.editorId, submittedAt: { gte: startOfMonth } },
-      _sum: { calculatedPriceCents: true },
-      _count: true,
-    }),
-    prisma.videoSubmission.groupBy({
-      by: ["status"],
-      where: { editorId: session.editorId },
-      _sum: { calculatedPriceCents: true },
-      _count: true,
-    }),
-  ]);
+  // Sequential, not Promise.all: concurrent queries through the pg driver
+  // adapter's shared pool can corrupt prepared statements under load.
+  const all = await prisma.videoSubmission.aggregate({
+    where: { editorId: session.editorId },
+    _sum: { calculatedPriceCents: true },
+    _count: true,
+  });
+  const thisMonth = await prisma.videoSubmission.aggregate({
+    where: { editorId: session.editorId, submittedAt: { gte: startOfMonth } },
+    _sum: { calculatedPriceCents: true },
+    _count: true,
+  });
+  const byStatus = await prisma.videoSubmission.groupBy({
+    by: ["status"],
+    where: { editorId: session.editorId },
+    _sum: { calculatedPriceCents: true },
+    _count: true,
+  });
 
   return NextResponse.json({
     allTime: { totalCents: all._sum.calculatedPriceCents ?? 0, count: all._count },

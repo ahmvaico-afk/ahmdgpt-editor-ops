@@ -51,3 +51,11 @@ export const updateEditorSchema = z.object({
   pin: z.string().trim().min(4).max(6).regex(/^\d+$/).optional(),
   name: z.string().trim().min(1).max(120).optional(),
 });
+
+export const updateBatchSettingsSchema = z.object({
+  currentBatch: z.number().int().positive(),
+});
+
+export const wipeBatchSchema = z.object({
+  confirm: z.literal(true),
+});

@@ -17,6 +17,96 @@
   --color-warning: #f5a623;
 
   --ease-brand: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* Was inline on the primary Button; shared so the reel UI matches it. */
+  --shadow-accent-glow: 0 0 24px rgba(255, 42, 60, 0.25);
+}
+
+/*
+ * Film grain, in one place. Previously inline in `components/grain-overlay.tsx`.
+ * `lib/reel/spec.ts` mirrors these turbulence values so the exported MP4 carries
+ * the same grain as the site.
+ */
+@layer base {
+  :root {
+    --grain-tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
+/*
+ * The reel preview renders with the very TTFs resvg rasterises, served from
+ * /public/reel-fonts, rather than with the next/font copies the rest of the site
+ * uses. Those are the same typefaces but not guaranteed to be the same builds,
+ * and any metric difference shows up as the preview and the exported MP4
+ * disagreeing about how wide the headline is. Reel-specific names so site-wide
+ * typography is untouched.
+ */
+@font-face {
+  font-family: "ReelDisplay";
+  font-weight: 800;
+  font-style: normal;
+  font-display: block;
+  src: url("/reel-fonts/Syne-ExtraBold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "ReelDisplay";
+  font-weight: 700;
+  font-style: normal;
+  font-display: block;
+  src: url("/reel-fonts/Syne-Bold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "ReelMono";
+  font-weight: 500;
+  font-style: normal;
+  font-display: block;
+  src: url("/reel-fonts/JetBrainsMono-Medium.ttf") format("truetype");
+}
+@font-face {
+  font-family: "ReelMono";
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+  src: url("/reel-fonts/JetBrainsMono-Regular.ttf") format("truetype");
+}
+
+/*
+ * The conic sweep behind the reel card. `screen` mirrors the FFmpeg blend, so
+ * the preview and the exported MP4 light the backdrop the same way. Duration is
+ * set inline from `CONIC.periodSeconds`.
+ */
+.reel-sweep {
+  pointer-events: none;
+  mix-blend-mode: screen;
+  animation-name: reel-sweep-spin;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.reel-sweep svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes reel-sweep-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reel-sweep {
+    animation: none;
+  }
+}
+
+.grain-layer {
+  pointer-events: none;
+  background-image: var(--grain-tile);
+  background-repeat: repeat;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
 }
 
 /* Font tokens reference next/font's runtime CSS variables set on <html>. */

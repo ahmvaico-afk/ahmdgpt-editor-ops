@@ -52,6 +52,14 @@ async function main() {
     });
   }
   console.log(`Seeded ${DEFAULT_STYLES.length} default video styles`);
+
+  // Doesn't touch currentBatch if it's already set — only sets it the first time.
+  await prisma.appSettings.upsert({
+    where: { id: "singleton" },
+    update: {},
+    create: { id: "singleton", currentBatch: 4 },
+  });
+  console.log("Batch counter ready");
 }
 
 main()

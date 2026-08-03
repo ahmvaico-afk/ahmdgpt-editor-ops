@@ -22,10 +22,17 @@ export interface Submission {
   pricePerMinuteCents: number;
   calculatedPriceCents: number;
   status: SubmissionStatus;
+  batchNumber: number;
   submittedAt: string;
   updatedAt: string;
   notes: string | null;
   editor?: { name: string; editorCode: string };
+}
+
+export interface BatchInfo {
+  number: number;
+  count: number;
+  totalCents: number;
 }
 
 export interface EditorSummary {

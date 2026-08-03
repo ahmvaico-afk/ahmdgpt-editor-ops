@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/admin/dashboard", label: "Dashboard" },
   { href: "/admin/styles", label: "Styles" },
   { href: "/admin/editors", label: "Editors" },
+  { href: "/admin/reel", label: "Reel" },
 ];
 
 export function AdminHeader() {
@@ -16,8 +17,8 @@ export function AdminHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-bg/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-8">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-y-3 px-6 py-4">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 sm:gap-8">
           <Link href="/admin/dashboard" className="flex items-center gap-2">
             <EyeLogo className="h-6 w-6 text-text" />
             <span className="font-display text-sm font-extrabold tracking-tight text-text">
