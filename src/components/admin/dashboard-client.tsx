@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { SummaryCards } from "@/components/admin/summary-cards";
 import { BatchManager } from "@/components/admin/batch-manager";
+import { EditSubmissionModal } from "@/components/admin/edit-submission-modal";
 import { formatDuration } from "@/lib/duration";
 import type { AdminEditor, BatchInfo, Style, Submission, SubmissionStatus } from "@/lib/types";
 
@@ -21,6 +22,7 @@ export function AdminDashboardClient() {
   const [status, setStatus] = useState("");
   const [batch, setBatch] = useState("");
   const [page, setPage] = useState(1);
+  const [editTarget, setEditTarget] = useState<Submission | null>(null);
 
   const { data: editorsData } = useSWR<{ editors: AdminEditor[] }>(
     "/api/admin/editors",
@@ -181,6 +183,12 @@ export function AdminDashboardClient() {
                 {formatCents(item.calculatedPriceCents)}
               </span>
               <StatusBadge status={item.status} />
+              <button
+                onClick={() => setEditTarget(item)}
+                className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
+              >
+                Edit
+              </button>
               {item.status === "submitted" && (
                 <>
                   <Button size="sm" onClick={() => updateStatus(item.id, "approved")}>
@@ -244,6 +252,14 @@ export function AdminDashboardClient() {
           </button>
         </div>
       )}
+
+      <EditSubmissionModal
+        key={editTarget?.id ?? "none"}
+        submission={editTarget}
+        styles={styles}
+        onClose={() => setEditTarget(null)}
+        onSaved={() => mutate()}
+      />
     </div>
   );
 }

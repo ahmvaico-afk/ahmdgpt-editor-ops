@@ -22,7 +22,11 @@ export const createSubmissionSchema = z.object({
 
 export const updateSubmissionSchema = z.object({
   status: z.enum(["submitted", "approved", "paid", "rejected"]).optional(),
-  notes: z.string().trim().max(2000).optional(),
+  title: z.string().trim().min(1).max(200).optional(),
+  clientOrProject: z.string().trim().max(200).optional().or(z.literal("")),
+  videoLink: z.string().trim().url().max(1000).optional(),
+  durationMinutes: z.number().positive().max(10000).optional(),
+  notes: z.string().trim().max(2000).optional().or(z.literal("")),
 });
 
 export const createStyleSchema = z.object({

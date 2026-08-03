@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession, requireEditorSession } from "@/lib/auth";
 import { updateSubmissionSchema } from "@/lib/validation";
+import { calculatePriceCents } from "@/lib/pricing";
+import type { Prisma } from "@/generated/prisma/client";
 
 export async function PATCH(
   request: NextRequest,
@@ -18,10 +20,36 @@ export async function PATCH(
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid update." }, { status: 400 });
   }
+  const data = parsed.data;
+
+  const existing = await prisma.videoSubmission.findUnique({ where: { id } });
+  if (!existing) {
+    return NextResponse.json({ error: "Not found." }, { status: 404 });
+  }
+
+  const update: Prisma.VideoSubmissionUpdateInput = {};
+  if (data.status !== undefined) update.status = data.status;
+  if (data.title !== undefined) update.title = data.title;
+  if (data.clientOrProject !== undefined) update.clientOrProject = data.clientOrProject || null;
+  if (data.videoLink !== undefined) update.videoLink = data.videoLink;
+  if (data.notes !== undefined) update.notes = data.notes || null;
+
+  if (data.durationMinutes !== undefined) {
+    // Owner correcting a mistake — keep the originally snapshotted rate, but
+    // use the style's current step-pricing increment for the recalculation.
+    const style = await prisma.videoStyle.findUnique({ where: { id: existing.styleId } });
+    const increment = style?.perMinuteIncrementCents ?? 0;
+    update.durationMinutes = data.durationMinutes;
+    update.calculatedPriceCents = calculatePriceCents(
+      data.durationMinutes,
+      existing.pricePerMinuteCents,
+      increment
+    );
+  }
 
   const submission = await prisma.videoSubmission.update({
     where: { id },
-    data: parsed.data,
+    data: update,
   });
 
   return NextResponse.json({ submission });
