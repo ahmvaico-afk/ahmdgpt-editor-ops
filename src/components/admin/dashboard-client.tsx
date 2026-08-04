@@ -24,6 +24,7 @@ export function AdminDashboardClient() {
   const [selectedBatch, setSelectedBatch] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [editTarget, setEditTarget] = useState<Submission | null>(null);
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const { data: editorsData } = useSWR<{ editors: AdminEditor[] }>(
     "/api/admin/editors",
@@ -71,6 +72,34 @@ export function AdminDashboardClient() {
     mutate();
   }
 
+  async function bulkUpdateStatus(next: "approved" | "paid") {
+    const scope = batch ? `Batch ${batch}` : "all batches";
+    const from = next === "approved" ? "submitted" : "approved";
+    if (!confirm(`Mark every "${from}" video in ${scope} as ${next}?`)) return;
+    setBulkLoading(true);
+    try {
+      const res = await fetch("/api/admin/submissions/bulk-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: next,
+          batch: batch || undefined,
+          editorId: editorId || undefined,
+          styleId: styleId || undefined,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        alert(`${json.updated ?? 0} video${json.updated === 1 ? "" : "s"} marked ${next}.`);
+      } else {
+        alert(json.error ?? "Could not update.");
+      }
+      mutate();
+    } finally {
+      setBulkLoading(false);
+    }
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 py-8">
       <h1 className="font-display text-2xl font-extrabold text-text">Master Dashboard</h1>
@@ -84,36 +113,56 @@ export function AdminDashboardClient() {
         }}
       />
 
-      <div className="flex flex-wrap gap-1.5">
-        <button
-          onClick={() => {
-            setSelectedBatch("");
-            setPage(1);
-          }}
-          className={`rounded-full px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors ${
-            batch === ""
-              ? "bg-accent text-bg"
-              : "bg-surface-2 text-muted hover:text-text"
-          }`}
-        >
-          All batches
-        </button>
-        {batchTabs.map((b) => (
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-1.5">
           <button
-            key={b.number}
             onClick={() => {
-              setSelectedBatch(String(b.number));
+              setSelectedBatch("");
               setPage(1);
             }}
             className={`rounded-full px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors ${
-              batch === String(b.number)
+              batch === ""
                 ? "bg-accent text-bg"
                 : "bg-surface-2 text-muted hover:text-text"
             }`}
           >
-            Batch {b.number} ({b.count})
+            All batches
           </button>
-        ))}
+          {batchTabs.map((b) => (
+            <button
+              key={b.number}
+              onClick={() => {
+                setSelectedBatch(String(b.number));
+                setPage(1);
+              }}
+              className={`rounded-full px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors ${
+                batch === String(b.number)
+                  ? "bg-accent text-bg"
+                  : "bg-surface-2 text-muted hover:text-text"
+              }`}
+            >
+              Batch {b.number} ({b.count})
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={bulkLoading}
+            onClick={() => bulkUpdateStatus("approved")}
+          >
+            Approve All
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={bulkLoading}
+            onClick={() => bulkUpdateStatus("paid")}
+          >
+            Mark All Paid
+          </Button>
+        </div>
       </div>
 
       <Card className="flex flex-wrap items-end gap-3 p-4">

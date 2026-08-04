@@ -114,29 +114,25 @@ export function DashboardClient({
         />
       </div>
 
-      {personalStats &&
-        (personalStats.currentStreak >= 2 ||
-          personalStats.firstToday ||
-          personalStats.bestDayCount > 0) && (
-          <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
-            {personalStats.firstToday && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/5 px-2.5 py-1 text-accent">
-                ⚡ First to submit today
-              </span>
-            )}
-            {personalStats.currentStreak >= 2 && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-muted">
-                🔥 {personalStats.currentStreak} day streak
-              </span>
-            )}
-            {personalStats.bestDayCount > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-muted">
-                🏅 Your record: {personalStats.bestDayCount} video
-                {personalStats.bestDayCount === 1 ? "" : "s"} in one day
-              </span>
-            )}
-          </div>
-        )}
+      {personalStats && personalStats.currentStreak >= 1 && (
+        <StreakBar streak={personalStats.currentStreak} />
+      )}
+
+      {personalStats && (personalStats.firstToday || personalStats.bestDayCount > 0) && (
+        <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+          {personalStats.firstToday && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/5 px-2.5 py-1 text-accent">
+              ⚡ First to submit today
+            </span>
+          )}
+          {personalStats.bestDayCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-muted">
+              🏅 Your record: {personalStats.bestDayCount} video
+              {personalStats.bestDayCount === 1 ? "" : "s"} in one day
+            </span>
+          )}
+        </div>
+      )}
 
       <Card className="divide-y divide-border">
         <div className="flex flex-wrap items-center justify-between gap-3 p-4">
@@ -227,6 +223,30 @@ function StatCard({ label, value }: { label: string; value: string }) {
     <Card className="p-4">
       <p className="font-mono text-[10px] uppercase tracking-wider text-muted">{label}</p>
       <p className="mt-1 font-display text-xl font-bold text-text">{value}</p>
+    </Card>
+  );
+}
+
+const STREAK_MILESTONE = 7;
+
+function StreakBar({ streak }: { streak: number }) {
+  const progress = Math.min(streak / STREAK_MILESTONE, 1) * 100;
+  const complete = streak >= STREAK_MILESTONE;
+  return (
+    <Card className="p-4">
+      <div className="flex items-center justify-between">
+        <p className="font-mono text-[11px] uppercase tracking-wider text-muted">🔥 Streak</p>
+        <p className="font-mono text-xs text-text">
+          {streak} day{streak === 1 ? "" : "s"}
+          {complete ? " 🏆" : ` · ${STREAK_MILESTONE - streak} to go`}
+        </p>
+      </div>
+      <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-accent to-gold transition-[width] duration-500"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
     </Card>
   );
 }
