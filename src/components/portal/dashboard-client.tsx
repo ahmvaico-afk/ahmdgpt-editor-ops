@@ -71,6 +71,12 @@ export function DashboardClient({
         </div>
         <div className="flex items-center gap-3">
           <Link
+            href={`/portal/${editorCode}/leaderboard`}
+            className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
+          >
+            Leaderboard
+          </Link>
+          <Link
             href={`/portal/${editorCode}/invoice`}
             className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
           >
