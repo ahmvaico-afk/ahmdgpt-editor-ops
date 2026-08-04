@@ -6,6 +6,7 @@ import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { formatCents } from "@/lib/pricing";
 import { formatDuration } from "@/lib/duration";
+import { formatDate } from "@/lib/date";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -35,6 +36,9 @@ export function DashboardClient({
     items: Submission[];
     total: number;
   }>("/api/submissions", fetcher, { refreshInterval: 8000 });
+  const { data: batchData } = useSWR<{ currentBatch: number }>("/api/batch", fetcher, {
+    refreshInterval: 15000,
+  });
 
   function refreshAll() {
     mutateSummary();
@@ -58,6 +62,12 @@ export function DashboardClient({
             Welcome back
           </p>
           <h1 className="font-display text-2xl font-extrabold text-text">{editorName}</h1>
+          {batchData && (
+            <p className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted">
+              <span className="status-dot" />
+              Adding to Batch {batchData.currentBatch}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <Link
@@ -104,7 +114,7 @@ export function DashboardClient({
               <p className="mt-0.5 truncate font-mono text-xs text-muted">
                 {item.styleName} · {formatDuration(item.durationMinutes)}
                 {item.clientOrProject ? ` · ${item.clientOrProject}` : ""} ·{" "}
-                {new Date(item.submittedAt).toLocaleDateString()}
+                {formatDate(item.submittedAt)}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-3">
@@ -139,6 +149,7 @@ export function DashboardClient({
         onClose={() => setModalOpen(false)}
         styles={styles}
         onCreated={refreshAll}
+        currentBatch={batchData?.currentBatch}
       />
 
       <EditSubmissionModal

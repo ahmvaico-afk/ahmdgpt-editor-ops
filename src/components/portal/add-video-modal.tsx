@@ -13,11 +13,13 @@ export function AddVideoModal({
   onClose,
   styles,
   onCreated,
+  currentBatch,
 }: {
   open: boolean;
   onClose: () => void;
   styles: Style[];
   onCreated: () => void;
+  currentBatch?: number;
 }) {
   const [selectedStyleId, setSelectedStyleId] = useState("");
   const styleId = selectedStyleId || styles[0]?.id || "";
@@ -104,6 +106,11 @@ export function AddVideoModal({
 
   return (
     <Modal open={open} onClose={onClose} title="Add Video">
+      {currentBatch !== undefined && (
+        <p className="-mt-2 mb-4 font-mono text-[11px] uppercase tracking-wider text-muted">
+          Goes into Batch {currentBatch}
+        </p>
+      )}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
           <Label>Style</Label>

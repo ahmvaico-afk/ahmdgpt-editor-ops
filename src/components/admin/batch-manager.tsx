@@ -17,28 +17,46 @@ export function BatchManager({ onChanged }: { onChanged: () => void }) {
     { refreshInterval: 10000 }
   );
   const [wipeTarget, setWipeTarget] = useState<BatchInfo | null>(null);
+  const [manualBatch, setManualBatch] = useState("");
+  const [savingBatch, setSavingBatch] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  async function applyBatchNumber(n: number) {
+    setSaveError(null);
+    setSavingBatch(true);
+    try {
+      const res = await fetch("/api/admin/batches", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentBatch: n }),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        setSaveError(json.error ?? "Could not update batch.");
+        return;
+      }
+      setManualBatch("");
+      mutate();
+      onChanged();
+    } catch {
+      setSaveError("Network error — try again.");
+    } finally {
+      setSavingBatch(false);
+    }
+  }
 
   async function startNewBatch() {
     if (!data) return;
-    await fetch("/api/admin/batches", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ currentBatch: data.currentBatch + 1 }),
-    });
-    mutate();
-    onChanged();
+    await applyBatchNumber(data.currentBatch + 1);
   }
 
-  async function setBatchNumber(value: string) {
-    const n = parseInt(value, 10);
-    if (!Number.isInteger(n) || n < 1) return;
-    await fetch("/api/admin/batches", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ currentBatch: n }),
-    });
-    mutate();
-    onChanged();
+  function handleManualSave() {
+    const n = parseInt(manualBatch, 10);
+    if (!Number.isInteger(n) || n < 1) {
+      setSaveError("Enter a whole number, 1 or higher.");
+      return;
+    }
+    applyBatchNumber(n);
   }
 
   const currentBatch = data?.currentBatch ?? 1;
@@ -54,22 +72,33 @@ export function BatchManager({ onChanged }: { onChanged: () => void }) {
           <p className="font-display text-xl font-bold text-text">Batch {currentBatch}</p>
           <p className="mt-0.5 text-xs text-muted">New videos editors add go here.</p>
         </div>
-        <div className="flex items-end gap-2">
-          <div>
-            <p className="mb-1.5 font-mono text-[11px] uppercase tracking-wider text-muted">
-              Set batch #
-            </p>
-            <Input
-              type="number"
-              min="1"
-              defaultValue={currentBatch}
-              onBlur={(e) => setBatchNumber(e.target.value)}
-              className="!w-24"
-            />
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-end gap-2">
+            <div>
+              <p className="mb-1.5 font-mono text-[11px] uppercase tracking-wider text-muted">
+                Set batch #
+              </p>
+              <Input
+                type="number"
+                min="1"
+                placeholder={String(currentBatch)}
+                value={manualBatch}
+                onChange={(e) => setManualBatch(e.target.value)}
+                className="!w-24"
+              />
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleManualSave}
+              disabled={savingBatch || !manualBatch}
+            >
+              Save
+            </Button>
+            <Button variant="outline" onClick={startNewBatch} disabled={savingBatch}>
+              {savingBatch ? "Working…" : `+ Start Batch ${currentBatch + 1}`}
+            </Button>
           </div>
-          <Button variant="outline" onClick={startNewBatch}>
-            + Start Batch {currentBatch + 1}
-          </Button>
+          {saveError && <p className="text-xs text-accent">{saveError}</p>}
         </div>
       </div>
 

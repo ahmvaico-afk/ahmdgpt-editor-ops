@@ -12,6 +12,7 @@ import { SummaryCards } from "@/components/admin/summary-cards";
 import { BatchManager } from "@/components/admin/batch-manager";
 import { EditSubmissionModal } from "@/components/edit-submission-modal";
 import { formatDuration } from "@/lib/duration";
+import { formatDate } from "@/lib/date";
 import type { AdminEditor, BatchInfo, Style, Submission, SubmissionStatus } from "@/lib/types";
 
 const STATUSES: SubmissionStatus[] = ["submitted", "approved", "paid", "rejected"];
@@ -162,7 +163,7 @@ export function AdminDashboardClient() {
                 {item.editor?.name ?? "—"} · {item.styleName} ·{" "}
                 {formatDuration(item.durationMinutes)}
                 {item.clientOrProject ? ` · ${item.clientOrProject}` : ""} ·{" "}
-                {new Date(item.submittedAt).toLocaleDateString()}
+                {formatDate(item.submittedAt)}
               </p>
               {item.notes && (
                 <p className="mt-0.5 truncate text-xs italic text-muted-2">

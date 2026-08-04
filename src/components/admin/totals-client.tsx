@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { formatCents } from "@/lib/pricing";
 import { formatDuration } from "@/lib/duration";
+import { formatDate } from "@/lib/date";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
 
@@ -113,7 +114,7 @@ function EditorVideoList({ editorId }: { editorId: string }) {
             <p className="truncate text-sm text-text">{item.title}</p>
             <p className="font-mono text-xs text-muted">
               {item.styleName} · {formatDuration(item.durationMinutes)} · Batch{" "}
-              {item.batchNumber} · {new Date(item.submittedAt).toLocaleDateString()}
+              {item.batchNumber} · {formatDate(item.submittedAt)}
             </p>
           </div>
           <div className="flex items-center gap-3">
