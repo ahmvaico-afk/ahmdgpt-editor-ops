@@ -23,6 +23,7 @@ export function DashboardClient({
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Submission | null>(null);
+  const [selectedBatch, setSelectedBatch] = useState<number | null>(null);
 
   const { data: summary, mutate: mutateSummary } = useSWR<EditorSummary>(
     "/api/submissions/summary",
@@ -32,13 +33,24 @@ export function DashboardClient({
   const { data: stylesData } = useSWR<{ styles: Style[] }>("/api/styles", fetcher, {
     refreshInterval: 15000,
   });
+  const { data: batchData } = useSWR<{ currentBatch: number; editorBatches: number[] }>(
+    "/api/batch",
+    fetcher,
+    { refreshInterval: 15000 }
+  );
+  const activeBatch = selectedBatch ?? batchData?.currentBatch ?? null;
   const { data: submissionsData, mutate: mutateSubmissions } = useSWR<{
     items: Submission[];
     total: number;
-  }>("/api/submissions", fetcher, { refreshInterval: 8000 });
-  const { data: batchData } = useSWR<{ currentBatch: number }>("/api/batch", fetcher, {
-    refreshInterval: 15000,
+  }>(activeBatch ? `/api/submissions?batch=${activeBatch}&all=true` : null, fetcher, {
+    refreshInterval: 8000,
   });
+  const { data: personalStats } = useSWR<{
+    bestDayCount: number;
+    bestDayDate: string | null;
+    currentStreak: number;
+    firstToday: boolean;
+  }>("/api/personal-stats", fetcher, { refreshInterval: 15000 });
 
   function refreshAll() {
     mutateSummary();
@@ -102,15 +114,56 @@ export function DashboardClient({
         />
       </div>
 
+      {personalStats &&
+        (personalStats.currentStreak >= 2 ||
+          personalStats.firstToday ||
+          personalStats.bestDayCount > 0) && (
+          <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+            {personalStats.firstToday && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/5 px-2.5 py-1 text-accent">
+                ⚡ First to submit today
+              </span>
+            )}
+            {personalStats.currentStreak >= 2 && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-muted">
+                🔥 {personalStats.currentStreak} day streak
+              </span>
+            )}
+            {personalStats.bestDayCount > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-muted">
+                🏅 Your record: {personalStats.bestDayCount} video
+                {personalStats.bestDayCount === 1 ? "" : "s"} in one day
+              </span>
+            )}
+          </div>
+        )}
+
       <Card className="divide-y divide-border">
-        <div className="p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-4">
           <h2 className="font-mono text-[11px] uppercase tracking-wider text-muted">
             Your submissions
           </h2>
+          {batchData && batchData.editorBatches.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {batchData.editorBatches.map((b) => (
+                <button
+                  key={b}
+                  onClick={() => setSelectedBatch(b)}
+                  className={`rounded-full px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors ${
+                    b === activeBatch
+                      ? "bg-accent text-bg"
+                      : "bg-surface-2 text-muted hover:text-text"
+                  }`}
+                >
+                  Batch {b}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         {items.length === 0 && (
           <p className="p-6 text-center text-sm text-muted">
-            No submissions yet. Add your first video above.
+            {activeBatch ? `No submissions in Batch ${activeBatch} yet.` : "No submissions yet."}
           </p>
         )}
         {items.map((item) => (
