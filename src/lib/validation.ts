@@ -63,3 +63,12 @@ export const updateBatchSettingsSchema = z.object({
 export const wipeBatchSchema = z.object({
   confirm: z.literal(true),
 });
+
+export const updateClientRateSchema = z.object({
+  clientRateDollars: z.number().nonnegative().max(100000).nullable(),
+  clientIncrementDollars: z.number().nonnegative().max(100000).optional(),
+});
+
+export const invoiceUnlockSchema = z.object({
+  password: z.string().min(1).max(200),
+});

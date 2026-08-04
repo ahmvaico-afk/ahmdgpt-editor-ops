@@ -6,7 +6,7 @@ export async function proxy(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   const session = token ? await verifySessionToken(token) : null;
 
-  const adminMatch = pathname.match(/^\/admin\/(dashboard|styles|editors|reel)/);
+  const adminMatch = pathname.match(/^\/admin\/(dashboard|styles|editors|reel|totals|invoices)/);
   if (adminMatch) {
     if (!session || session.role !== "admin") {
       return NextResponse.redirect(new URL("/admin", request.url));
@@ -14,7 +14,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const portalMatch = pathname.match(/^\/portal\/([^/]+)\/dashboard/);
+  const portalMatch = pathname.match(/^\/portal\/([^/]+)\/(dashboard|invoice)/);
   if (portalMatch) {
     const editorCode = decodeURIComponent(portalMatch[1]).toLowerCase();
     if (!session || session.role !== "editor" || session.editorCode !== editorCode) {

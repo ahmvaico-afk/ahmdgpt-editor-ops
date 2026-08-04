@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { PortalHeader } from "@/components/nav/portal-header";
-import { DashboardClient } from "@/components/portal/dashboard-client";
+import { EditorInvoiceClient } from "@/components/portal/editor-invoice-client";
 
-export default async function EditorDashboardPage({
+export default async function EditorInvoicePage({
   params,
 }: {
   params: Promise<{ editorCode: string }>;
@@ -18,7 +18,7 @@ export default async function EditorDashboardPage({
   return (
     <div className="flex flex-1 flex-col">
       <PortalHeader editorCode={session.editorCode} />
-      <DashboardClient editorName={session.name} editorCode={session.editorCode} />
+      <EditorInvoiceClient editorName={session.name} />
     </div>
   );
 }

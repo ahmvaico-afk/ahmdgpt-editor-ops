@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { formatCents } from "@/lib/pricing";
@@ -11,7 +12,13 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { AddVideoModal } from "@/components/portal/add-video-modal";
 import type { EditorSummary, Style, Submission } from "@/lib/types";
 
-export function DashboardClient({ editorName }: { editorName: string }) {
+export function DashboardClient({
+  editorName,
+  editorCode,
+}: {
+  editorName: string;
+  editorCode: string;
+}) {
   const [modalOpen, setModalOpen] = useState(false);
 
   const { data: summary, mutate: mutateSummary } = useSWR<EditorSummary>(
@@ -50,7 +57,15 @@ export function DashboardClient({ editorName }: { editorName: string }) {
           </p>
           <h1 className="font-display text-2xl font-extrabold text-text">{editorName}</h1>
         </div>
-        <Button onClick={() => setModalOpen(true)}>+ Add Video</Button>
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/portal/${editorCode}/invoice`}
+            className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
+          >
+            Generate Invoice
+          </Link>
+          <Button onClick={() => setModalOpen(true)}>+ Add Video</Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">

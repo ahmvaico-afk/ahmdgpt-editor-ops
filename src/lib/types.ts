@@ -6,6 +6,9 @@ export interface Style {
   isCustomPricing: boolean;
   ratePerMinuteCents: number | null;
   perMinuteIncrementCents: number;
+  /// Client-facing invoice rate, separate from the editor payout rate above.
+  clientRatePerMinuteCents: number | null;
+  clientPerMinuteIncrementCents: number;
   active: boolean;
   sortOrder: number;
 }

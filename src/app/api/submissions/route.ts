@@ -16,8 +16,11 @@ export async function GET(request: NextRequest) {
 
   const url = request.nextUrl;
   const page = Math.max(1, Number(url.searchParams.get("page") ?? "1") || 1);
+  const batch = url.searchParams.get("batch");
+  const all = url.searchParams.get("all") === "true";
 
   const where: Prisma.VideoSubmissionWhereInput = {};
+  if (batch) where.batchNumber = Number(batch);
 
   if (session.role === "editor") {
     where.editorId = session.editorId;
@@ -25,14 +28,12 @@ export async function GET(request: NextRequest) {
     const editorId = url.searchParams.get("editorId");
     const styleId = url.searchParams.get("styleId");
     const status = url.searchParams.get("status");
-    const batch = url.searchParams.get("batch");
     const from = url.searchParams.get("from");
     const to = url.searchParams.get("to");
 
     if (editorId) where.editorId = editorId;
     if (styleId) where.styleId = styleId;
     if (status) where.status = status as Prisma.EnumSubmissionStatusFilter["equals"];
-    if (batch) where.batchNumber = Number(batch);
     if (from || to) {
       where.submittedAt = {
         ...(from ? { gte: new Date(from) } : {}),
@@ -41,14 +42,17 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  const take = all ? 500 : PAGE_SIZE;
+  const skip = all ? 0 : (page - 1) * PAGE_SIZE;
+
   // Sequential, not Promise.all: concurrent queries through the pg driver
   // adapter's shared pool can corrupt prepared statements under load.
   const items = await prisma.videoSubmission.findMany({
     where,
     include: { editor: { select: { name: true, editorCode: true } } },
     orderBy: { submittedAt: "desc" },
-    skip: (page - 1) * PAGE_SIZE,
-    take: PAGE_SIZE,
+    skip,
+    take,
   });
   const total = await prisma.videoSubmission.count({ where });
 
