@@ -1,11 +1,12 @@
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma/client";
 
 // Asia/Karachi is UTC+5 year-round (no DST) — fixed offset, no timezone lib needed.
 const KARACHI_OFFSET_MS = 5 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const STREAK_LOOKBACK_DAYS = 120;
 
-export const WEEKLY_BONUS_CENTS = 500000; // Rs 5,000
+export const BATCH_BONUS_CENTS = 500000; // Rs 5,000
 export const MONTHLY_BONUS_CENTS = 500000; // Rs 5,000
 
 function toKarachi(date: Date): Date {
@@ -22,15 +23,6 @@ function karachiTodayStart(now = new Date()): Date {
   const k = toKarachi(now);
   const utcMidnight = Date.UTC(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate());
   return new Date(utcMidnight - KARACHI_OFFSET_MS);
-}
-
-/** Most recent Monday 00:00 Karachi time, as a real UTC instant for DB queries. */
-export function getWeekStart(now = new Date()): Date {
-  const k = toKarachi(now);
-  const day = k.getUTCDay(); // 0=Sun..6=Sat
-  const diffToMonday = day === 0 ? 6 : day - 1;
-  const karachiMidnight = Date.UTC(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate() - diffToMonday);
-  return new Date(karachiMidnight - KARACHI_OFFSET_MS);
 }
 
 /** 1st of the current month, 00:00 Karachi time, as a real UTC instant. */
@@ -70,8 +62,6 @@ export interface LeaderboardRow {
 }
 
 export interface LeaderboardResult {
-  rangeStart: string;
-  rangeEnd: string;
   rows: LeaderboardRow[];
 }
 
@@ -101,13 +91,15 @@ async function getStreakMap(): Promise<Map<string, number>> {
  * distinct day with at least one submission. Rejected submissions don't
  * count — they weren't real completed work.
  */
-async function computeLeaderboard(rangeStart: Date, rangeEnd: Date): Promise<LeaderboardResult> {
+async function computeLeaderboardRows(
+  where: Prisma.VideoSubmissionWhereInput
+): Promise<LeaderboardRow[]> {
   const editors = await prisma.editor.findMany({
     where: { active: true },
     select: { id: true, name: true },
   });
   const submissions = await prisma.videoSubmission.findMany({
-    where: { submittedAt: { gte: rangeStart, lt: rangeEnd }, status: { not: "rejected" } },
+    where: { ...where, status: { not: "rejected" } },
     select: { editorId: true, submittedAt: true },
   });
   const streaks = await getStreakMap();
@@ -135,18 +127,24 @@ async function computeLeaderboard(rangeStart: Date, rangeEnd: Date): Promise<Lea
   });
 
   rows.sort((a, b) => b.score - a.score || b.videoCount - a.videoCount);
-
-  return { rangeStart: rangeStart.toISOString(), rangeEnd: rangeEnd.toISOString(), rows };
+  return rows;
 }
 
-export async function getWeeklyLeaderboard(): Promise<LeaderboardResult> {
-  const weekStart = getWeekStart();
-  const weekEnd = new Date(weekStart.getTime() + 7 * DAY_MS);
-  return computeLeaderboard(weekStart, weekEnd);
+/**
+ * The primary leaderboard: scoped to a single batch, not a calendar window.
+ * A batch's standings freeze the moment the admin moves on to the next
+ * batch — there's no reset schedule, the owner controls it directly.
+ */
+export async function getBatchLeaderboard(batchNumber: number): Promise<LeaderboardResult> {
+  const rows = await computeLeaderboardRows({ batchNumber });
+  return { rows };
 }
 
 export async function getMonthlyLeaderboard(): Promise<LeaderboardResult> {
-  return computeLeaderboard(getMonthStart(), getMonthEnd());
+  const rows = await computeLeaderboardRows({
+    submittedAt: { gte: getMonthStart(), lt: getMonthEnd() },
+  });
+  return { rows };
 }
 
 export interface FirstToday {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/auth";
 import { hasInvoiceUnlock } from "@/lib/invoice-auth";
-import { calculatePriceCents } from "@/lib/pricing";
+import { calculateClientPriceCents } from "@/lib/pricing";
 
 export async function GET(
   _request: NextRequest,
@@ -31,7 +31,16 @@ export async function GET(
   const items = submissions.map((s) => {
     const rate = s.style.clientRatePerMinuteCents;
     const clientPriceCents =
-      rate == null ? null : calculatePriceCents(s.durationMinutes, rate, s.style.clientPerMinuteIncrementCents);
+      rate == null
+        ? null
+        : calculateClientPriceCents(s.durationMinutes, {
+            clientRatePerMinuteCents: rate,
+            clientPerMinuteIncrementCents: s.style.clientPerMinuteIncrementCents,
+            clientBaseSeconds: s.style.clientBaseSeconds,
+            clientOverageUnitSeconds: s.style.clientOverageUnitSeconds,
+            clientOverageGraceSeconds: s.style.clientOverageGraceSeconds,
+            clientOverageProportional: s.style.clientOverageProportional,
+          });
     return {
       id: s.id,
       title: s.title,

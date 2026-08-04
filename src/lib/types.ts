@@ -9,6 +9,10 @@ export interface Style {
   /// Client-facing invoice rate, separate from the editor payout rate above.
   clientRatePerMinuteCents: number | null;
   clientPerMinuteIncrementCents: number;
+  clientBaseSeconds: number;
+  clientOverageUnitSeconds: number;
+  clientOverageGraceSeconds: number;
+  clientOverageProportional: boolean;
   active: boolean;
   sortOrder: number;
 }

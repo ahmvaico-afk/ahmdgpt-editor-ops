@@ -41,9 +41,15 @@ model VideoStyle {
   ratePerMinuteCents            Int?
   /// Step pricing: when > 0, ratePerMinuteCents becomes a flat base covering the first minute, and each additional minute adds this flat amount (1 min = rate, 2 min = rate+this, 3 min = rate+2x this...). 0 = ratePerMinuteCents is a plain per-minute rate (duration x rate).
   perMinuteIncrementCents       Int               @default(0)
-  /// Client-facing billing rate for invoices — deliberately separate from ratePerMinuteCents (what the editor is paid). Only visible/editable behind the invoice password gate. Same step-pricing semantics as ratePerMinuteCents/perMinuteIncrementCents.
+  /// Client-facing billing rate for invoices — deliberately separate from ratePerMinuteCents (what the editor is paid). Only visible/editable behind the invoice password gate.
+  /// When clientBaseSeconds = 0: clientRatePerMinuteCents is a plain per-minute rate (duration x rate), clientPerMinuteIncrementCents unused.
+  /// When clientBaseSeconds > 0: clientRatePerMinuteCents is a flat base price covering up to that many seconds; clientPerMinuteIncrementCents is the overage rate per clientOverageUnitSeconds unit beyond it. clientOverageProportional=true bills overage continuously (no rounding); false bills in whole units, only advancing to the next unit once more than clientOverageGraceSeconds past the boundary.
   clientRatePerMinuteCents      Int?
   clientPerMinuteIncrementCents Int               @default(0)
+  clientBaseSeconds             Int               @default(0)
+  clientOverageUnitSeconds      Int               @default(60)
+  clientOverageGraceSeconds     Int               @default(0)
+  clientOverageProportional     Boolean           @default(false)
   active                        Boolean           @default(true)
   sortOrder                     Int               @default(0)
   createdAt                     DateTime          @default(now())

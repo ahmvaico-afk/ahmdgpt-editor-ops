@@ -1,6 +1,6 @@
 "use client";
 
-import { formatCents } from "@/lib/pricing";
+import { formatCents, formatUsdCents } from "@/lib/pricing";
 import { formatDuration } from "@/lib/duration";
 import { EyeLogo } from "@/components/eye-logo";
 
@@ -20,6 +20,7 @@ export function InvoiceDocument({
   items,
   totalCents,
   footerNote,
+  currency,
 }: {
   fromName: string;
   toName?: string;
@@ -29,7 +30,9 @@ export function InvoiceDocument({
   items: InvoiceLineItem[];
   totalCents: number;
   footerNote?: string;
+  currency?: "PKR" | "USD";
 }) {
+  const format = currency === "USD" ? formatUsdCents : formatCents;
   return (
     <div className="mx-auto min-h-screen max-w-3xl bg-white px-10 py-12 text-neutral-900 print:px-0 print:py-0">
       <div className="mb-2 flex items-center justify-end print:hidden">
@@ -84,7 +87,7 @@ export function InvoiceDocument({
                 {formatDuration(item.durationMinutes)}
               </td>
               <td className="py-3 text-right font-mono text-neutral-900">
-                {item.amountCents == null ? "—" : formatCents(item.amountCents)}
+                {item.amountCents == null ? "—" : format(item.amountCents)}
               </td>
             </tr>
           ))}
@@ -95,7 +98,7 @@ export function InvoiceDocument({
         <div className="w-56">
           <div className="flex justify-between border-t border-neutral-300 pt-3 text-base font-bold text-neutral-900">
             <span>Total</span>
-            <span className="font-mono">{formatCents(totalCents)}</span>
+            <span className="font-mono">{format(totalCents)}</span>
           </div>
         </div>
       </div>

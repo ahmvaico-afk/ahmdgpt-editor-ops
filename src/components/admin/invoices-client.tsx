@@ -3,7 +3,7 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
-import { centsToDollars, formatCents } from "@/lib/pricing";
+import { centsToDollars, formatUsdCents } from "@/lib/pricing";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select } from "@/components/ui/input";
@@ -116,7 +116,9 @@ function InvoicesWorkspace() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         clientRateDollars:
-          style.ratePerMinuteCents != null ? centsToDollars(style.ratePerMinuteCents) : null,
+          style.clientRatePerMinuteCents != null
+            ? centsToDollars(style.clientRatePerMinuteCents)
+            : null,
         clientIncrementDollars: value,
       }),
     });
@@ -146,43 +148,61 @@ function InvoicesWorkspace() {
           Client billing rates
         </h2>
         <Card className="divide-y divide-border">
-          {styles.map((s) => (
-            <div key={s.id} className="flex flex-wrap items-center gap-3 p-4">
-              <span className="min-w-[10rem] flex-1 text-sm text-text">{s.name}</span>
-              {s.isCustomPricing ? (
-                <span className="font-mono text-xs uppercase tracking-wider text-muted-2">
-                  Custom style — set per invoice manually
-                </span>
-              ) : (
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-muted">Rs</span>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    defaultValue={
-                      s.clientRatePerMinuteCents != null
-                        ? centsToDollars(s.clientRatePerMinuteCents)
-                        : ""
-                    }
-                    onBlur={(e) => updateRate(s, e.target.value)}
-                    placeholder="not set"
-                    className="!w-24"
-                  />
-                  <span className="text-muted">min 1, +Rs</span>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    defaultValue={centsToDollars(s.clientPerMinuteIncrementCents)}
-                    onBlur={(e) => updateIncrement(s, e.target.value)}
-                    className="!w-20"
-                  />
-                  <span className="text-muted">each min after</span>
-                </div>
-              )}
-            </div>
-          ))}
+          {styles.map((s) => {
+            const hasBase = s.clientBaseSeconds > 0;
+            const baseLabel = hasBase
+              ? `${Math.floor(s.clientBaseSeconds / 60)}:${String(s.clientBaseSeconds % 60).padStart(2, "0")}`
+              : null;
+            const overageUnitLabel = s.clientOverageUnitSeconds === 30 ? "30s" : "min";
+            return (
+              <div key={s.id} className="flex flex-wrap items-center gap-3 p-4">
+                <span className="min-w-[10rem] flex-1 text-sm text-text">{s.name}</span>
+                {s.isCustomPricing ? (
+                  <span className="font-mono text-xs uppercase tracking-wider text-muted-2">
+                    Custom style — set per invoice manually
+                  </span>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-muted">$</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      defaultValue={
+                        s.clientRatePerMinuteCents != null
+                          ? centsToDollars(s.clientRatePerMinuteCents)
+                          : ""
+                      }
+                      onBlur={(e) => updateRate(s, e.target.value)}
+                      placeholder="not set"
+                      className="!w-24"
+                    />
+                    {hasBase ? (
+                      <>
+                        <span className="text-muted">flat up to {baseLabel}, +$</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          defaultValue={centsToDollars(s.clientPerMinuteIncrementCents)}
+                          onBlur={(e) => updateIncrement(s, e.target.value)}
+                          className="!w-20"
+                        />
+                        <span className="text-muted">
+                          per {overageUnitLabel} after
+                          {s.clientOverageGraceSeconds > 0
+                            ? ` (${s.clientOverageGraceSeconds}s grace)`
+                            : ""}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-muted">/ min flat</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </Card>
       </section>
 
@@ -231,7 +251,7 @@ function BatchPreview({ batchNumber }: { batchNumber: number }) {
   return (
     <p className="text-xs text-muted">
       {data.items.length} video{data.items.length === 1 ? "" : "s"} · projected total{" "}
-      <span className="text-text">{formatCents(data.totalCents)}</span>
+      <span className="text-text">{formatUsdCents(data.totalCents)}</span>
       {data.hasMissingRates && (
         <span className="ml-2 text-warning">
           — some styles in this batch have no client rate set yet

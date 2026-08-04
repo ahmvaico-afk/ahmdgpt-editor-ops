@@ -3,7 +3,6 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
-import { formatDate } from "@/lib/date";
 import { formatCents } from "@/lib/pricing";
 import { Card } from "@/components/ui/card";
 import type { FirstToday, LeaderboardResult } from "@/lib/leaderboard";
@@ -11,21 +10,29 @@ import type { FirstToday, LeaderboardResult } from "@/lib/leaderboard";
 const MEDALS = ["🥇", "🥈", "🥉"];
 
 interface LeaderboardResponse {
-  weekly: LeaderboardResult;
+  batch: LeaderboardResult;
+  batchNumber: number;
+  currentBatch: number;
+  batches: number[];
   monthly: LeaderboardResult;
   firstToday: FirstToday | null;
-  weeklyBonusCents: number;
+  batchBonusCents: number;
   monthlyBonusCents: number;
 }
 
 export function LeaderboardClient({ viewerEditorId }: { viewerEditorId?: string }) {
-  const [period, setPeriod] = useState<"week" | "month">("week");
-  const { data } = useSWR<LeaderboardResponse>("/api/leaderboard", fetcher, {
-    refreshInterval: 15000,
-  });
+  const [mode, setMode] = useState<"batch" | "month">("batch");
+  const [selectedBatch, setSelectedBatch] = useState<number | null>(null);
 
-  const board = period === "week" ? data?.weekly : data?.monthly;
-  const bonusCents = period === "week" ? data?.weeklyBonusCents : data?.monthlyBonusCents;
+  const { data } = useSWR<LeaderboardResponse>(
+    `/api/leaderboard${selectedBatch ? `?batch=${selectedBatch}` : ""}`,
+    fetcher,
+    { refreshInterval: 15000 }
+  );
+
+  const board = mode === "batch" ? data?.batch : data?.monthly;
+  const bonusCents = mode === "batch" ? data?.batchBonusCents : data?.monthlyBonusCents;
+  const activeBatch = selectedBatch ?? data?.currentBatch ?? null;
   const rows = board?.rows ?? [];
   const leader = rows.find((r) => r.score > 0);
 
@@ -33,46 +40,61 @@ export function LeaderboardClient({ viewerEditorId }: { viewerEditorId?: string 
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-8">
       <div>
         <h1 className="font-display text-2xl font-extrabold text-text">
-          {period === "week" ? "Weekly" : "Monthly"} Leaderboard
+          {mode === "batch" ? `Batch ${activeBatch ?? ""} Leaderboard` : "Monthly Leaderboard"}
         </h1>
-        {board && (
-          <p className="mt-1 text-sm text-muted">
-            {formatDate(board.rangeStart)} –{" "}
-            {formatDate(new Date(new Date(board.rangeEnd).getTime() - 86400000))}
-            {" · "}
-            {period === "week" ? "resets every Monday" : "resets on the 1st"}
-          </p>
-        )}
+        <p className="mt-1 text-sm text-muted">
+          {mode === "batch"
+            ? "Standings for this batch — frozen once the owner starts the next one."
+            : "Resets on the 1st of every month."}
+        </p>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button
-          onClick={() => setPeriod("week")}
+          onClick={() => setMode("batch")}
           className={`rounded-full px-3 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors ${
-            period === "week" ? "bg-accent text-bg" : "bg-surface-2 text-muted hover:text-text"
+            mode === "batch" ? "bg-accent text-bg" : "bg-surface-2 text-muted hover:text-text"
           }`}
         >
-          This week
+          By batch
         </button>
         <button
-          onClick={() => setPeriod("month")}
+          onClick={() => setMode("month")}
           className={`rounded-full px-3 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors ${
-            period === "month" ? "bg-accent text-bg" : "bg-surface-2 text-muted hover:text-text"
+            mode === "month" ? "bg-accent text-bg" : "bg-surface-2 text-muted hover:text-text"
           }`}
         >
           This month
         </button>
       </div>
 
+      {mode === "batch" && data && data.batches.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {data.batches.map((b) => (
+            <button
+              key={b}
+              onClick={() => setSelectedBatch(b)}
+              className={`rounded-full px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors ${
+                b === activeBatch
+                  ? "bg-accent text-bg"
+                  : "bg-surface-2 text-muted hover:text-text"
+              }`}
+            >
+              Batch {b}
+            </button>
+          ))}
+        </div>
+      )}
+
       <Card className="flex items-center gap-4 border-gold/40 bg-gradient-to-br from-gold/10 to-transparent p-5">
         <span className="text-3xl">🏆</span>
         <div>
           <p className="font-mono text-[10px] uppercase tracking-wider text-muted">
-            {period === "week" ? "This week's" : "This month's"} bonus —{" "}
+            {mode === "batch" ? `Batch ${activeBatch ?? ""}'s` : "This month's"} bonus —{" "}
             {bonusCents !== undefined ? formatCents(bonusCents) : "…"}
           </p>
           <p className="font-display text-lg font-bold text-text">
-            {leader ? leader.name : `No submissions yet this ${period}`}
+            {leader ? leader.name : "No submissions yet"}
           </p>
         </div>
       </Card>

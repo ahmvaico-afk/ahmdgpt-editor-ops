@@ -21,7 +21,7 @@ export function AdminDashboardClient() {
   const [editorId, setEditorId] = useState("");
   const [styleId, setStyleId] = useState("");
   const [status, setStatus] = useState("");
-  const [batch, setBatch] = useState("");
+  const [selectedBatch, setSelectedBatch] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [editTarget, setEditTarget] = useState<Submission | null>(null);
 
@@ -34,6 +34,9 @@ export function AdminDashboardClient() {
     currentBatch: number;
     batches: BatchInfo[];
   }>("/api/admin/batches", fetcher, { refreshInterval: 10000 });
+
+  const batch =
+    selectedBatch ?? (batchesData ? String(batchesData.currentBatch) : "");
 
   const params = new URLSearchParams();
   if (editorId) params.set("editorId", editorId);
@@ -51,6 +54,11 @@ export function AdminDashboardClient() {
   const editors = editorsData?.editors ?? [];
   const styles = stylesData?.styles ?? [];
   const batches = batchesData?.batches ?? [];
+  const batchTabs = batchesData
+    ? Array.from(new Set([...batches.map((b) => b.number), batchesData.currentBatch]))
+        .sort((a, b) => b - a)
+        .map((number) => batches.find((b) => b.number === number) ?? { number, count: 0, totalCents: 0 })
+    : [];
   const items = data?.items ?? [];
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
@@ -76,23 +84,39 @@ export function AdminDashboardClient() {
         }}
       />
 
-      <Card className="flex flex-wrap items-end gap-3 p-4">
-        <FilterField label="Batch">
-          <Select
-            value={batch}
-            onChange={(e) => {
-              setBatch(e.target.value);
+      <div className="flex flex-wrap gap-1.5">
+        <button
+          onClick={() => {
+            setSelectedBatch("");
+            setPage(1);
+          }}
+          className={`rounded-full px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors ${
+            batch === ""
+              ? "bg-accent text-bg"
+              : "bg-surface-2 text-muted hover:text-text"
+          }`}
+        >
+          All batches
+        </button>
+        {batchTabs.map((b) => (
+          <button
+            key={b.number}
+            onClick={() => {
+              setSelectedBatch(String(b.number));
               setPage(1);
             }}
+            className={`rounded-full px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors ${
+              batch === String(b.number)
+                ? "bg-accent text-bg"
+                : "bg-surface-2 text-muted hover:text-text"
+            }`}
           >
-            <option value="">All batches</option>
-            {batches.map((b) => (
-              <option key={b.number} value={b.number}>
-                Batch {b.number} ({b.count})
-              </option>
-            ))}
-          </Select>
-        </FilterField>
+            Batch {b.number} ({b.count})
+          </button>
+        ))}
+      </div>
+
+      <Card className="flex flex-wrap items-end gap-3 p-4">
         <FilterField label="Editor">
           <Select
             value={editorId}
