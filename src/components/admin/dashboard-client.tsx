@@ -10,7 +10,7 @@ import { Select } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { SummaryCards } from "@/components/admin/summary-cards";
 import { BatchManager } from "@/components/admin/batch-manager";
-import { EditSubmissionModal } from "@/components/admin/edit-submission-modal";
+import { EditSubmissionModal } from "@/components/edit-submission-modal";
 import { formatDuration } from "@/lib/duration";
 import type { AdminEditor, BatchInfo, Style, Submission, SubmissionStatus } from "@/lib/types";
 

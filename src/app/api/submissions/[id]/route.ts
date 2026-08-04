@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdminSession, requireEditorSession } from "@/lib/auth";
+import { getSession, requireEditorSession } from "@/lib/auth";
 import { updateSubmissionSchema } from "@/lib/validation";
 import { calculatePriceCents } from "@/lib/pricing";
 import type { Prisma } from "@/generated/prisma/client";
@@ -9,7 +9,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await requireAdminSession();
+  const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
@@ -25,6 +25,24 @@ export async function PATCH(
   const existing = await prisma.videoSubmission.findUnique({ where: { id } });
   if (!existing) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
+  }
+
+  if (session.role === "editor") {
+    if (existing.editorId !== session.editorId) {
+      return NextResponse.json({ error: "Not found." }, { status: 404 });
+    }
+    if (existing.status !== "submitted") {
+      return NextResponse.json(
+        { error: "Only videos still in 'submitted' status can be edited." },
+        { status: 400 }
+      );
+    }
+    if (data.status !== undefined) {
+      return NextResponse.json(
+        { error: "Editors can't change submission status." },
+        { status: 403 }
+      );
+    }
   }
 
   const update: Prisma.VideoSubmissionUpdateInput = {};

@@ -9,6 +9,10 @@ import { decimalToMinutesSeconds, minutesSecondsToDecimal } from "@/lib/duration
 import type { Style, Submission } from "@/lib/types";
 
 /**
+ * Shared by both the admin dashboard and the editor's own dashboard — same
+ * PATCH endpoint enforces different rules per role (editors can only edit
+ * their own submission, and only while it's still "submitted").
+ *
  * Parent must render this with `key={submission?.id ?? "none"}` so a new
  * submission remounts the form fresh instead of needing an effect to
  * resync state from props.

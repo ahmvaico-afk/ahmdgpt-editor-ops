@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AddVideoModal } from "@/components/portal/add-video-modal";
+import { EditSubmissionModal } from "@/components/edit-submission-modal";
 import type { EditorSummary, Style, Submission } from "@/lib/types";
 
 export function DashboardClient({
@@ -20,6 +21,7 @@ export function DashboardClient({
   editorCode: string;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<Submission | null>(null);
 
   const { data: summary, mutate: mutateSummary } = useSWR<EditorSummary>(
     "/api/submissions/summary",
@@ -111,13 +113,21 @@ export function DashboardClient({
               </span>
               <StatusBadge status={item.status} />
               {item.status === "submitted" && (
-                <button
-                  onClick={() => removeSubmission(item.id)}
-                  aria-label="Remove video"
-                  className="text-muted transition-colors hover:text-accent"
-                >
-                  ✕
-                </button>
+                <>
+                  <button
+                    onClick={() => setEditTarget(item)}
+                    className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => removeSubmission(item.id)}
+                    aria-label="Remove video"
+                    className="text-muted transition-colors hover:text-accent"
+                  >
+                    ✕
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -129,6 +139,14 @@ export function DashboardClient({
         onClose={() => setModalOpen(false)}
         styles={styles}
         onCreated={refreshAll}
+      />
+
+      <EditSubmissionModal
+        key={editTarget?.id ?? "none"}
+        submission={editTarget}
+        styles={styles}
+        onClose={() => setEditTarget(null)}
+        onSaved={refreshAll}
       />
     </div>
   );
