@@ -90,6 +90,31 @@ export function calculateClientPriceCents(
   return style.clientRatePerMinuteCents + tier * style.clientPerMinuteIncrementCents;
 }
 
+/**
+ * The three ladder shapes above, named. The Invoices screen edits a style by
+ * picking one of these rather than by setting the four raw fields, so the
+ * combinations that don't mean anything (grace on a prorated ladder, a unit on
+ * a flat rate) can't be produced by hand.
+ */
+export type ClientPricingShape = "per-minute" | "tiered" | "prorated";
+
+export function clientPricingShape(
+  style: Pick<ClientPricingConfig, "clientBaseSeconds" | "clientOverageProportional">
+): ClientPricingShape {
+  if (style.clientBaseSeconds <= 0) return "per-minute";
+  return style.clientOverageProportional ? "prorated" : "tiered";
+}
+
+/** Field values a shape implies. `baseSeconds` is ignored for "per-minute". */
+export function clientPricingShapeFields(shape: ClientPricingShape, baseSeconds: number) {
+  return {
+    clientBaseSeconds: shape === "per-minute" ? 0 : baseSeconds,
+    clientOverageUnitSeconds: shape === "tiered" ? 30 : 60,
+    clientOverageGraceSeconds: shape === "tiered" ? 5 : 0,
+    clientOverageProportional: shape === "prorated",
+  };
+}
+
 export function dollarsToCents(dollars: number) {
   return Math.round(dollars * 100);
 }

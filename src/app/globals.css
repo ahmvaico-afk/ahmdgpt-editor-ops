@@ -172,3 +172,28 @@ body {
 * {
   scrollbar-color: var(--color-border) var(--color-surface);
 }
+
+/*
+ * Invoices print on brand. Browsers drop background colours from printouts by
+ * default, which turned the dark sheet into black-on-white with the borders
+ * missing; `print-color-adjust: exact` keeps it as designed in Save-as-PDF.
+ */
+@media print {
+  /* Full bleed: these go out as PDFs, so the dark sheet should reach the page
+     edge rather than sit in a white frame. */
+  @page {
+    margin: 0;
+  }
+
+  body,
+  .invoice-sheet,
+  .invoice-sheet * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .invoice-sheet {
+    min-height: 100vh;
+    padding: 16mm 14mm;
+  }
+}

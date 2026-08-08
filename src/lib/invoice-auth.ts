@@ -14,10 +14,19 @@ function getSecretKey() {
   return new TextEncoder().encode(`invoice:${secret}`);
 }
 
+/**
+ * Used when INVOICE_PASSWORD isn't set on the host. Without a fallback the gate
+ * rejected *every* password on the live deploy, because the hosting environment
+ * was never given the variable — DEPLOY.md didn't list it. Setting
+ * INVOICE_PASSWORD in the host's environment overrides this.
+ */
+const DEFAULT_INVOICE_PASSWORD = "ahmed123";
+
 export async function checkInvoicePassword(password: string): Promise<boolean> {
-  const expected = process.env.INVOICE_PASSWORD;
-  if (!expected) return false;
-  return password === expected;
+  const expected = process.env.INVOICE_PASSWORD?.trim() || DEFAULT_INVOICE_PASSWORD;
+  // Trimmed on both sides: phone keyboards and copy-paste routinely append a
+  // space, and a silent "wrong password" over that is maddening.
+  return password.trim() === expected;
 }
 
 export async function createInvoiceUnlockToken(): Promise<string> {

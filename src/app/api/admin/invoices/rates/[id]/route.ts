@@ -33,6 +33,18 @@ export async function PATCH(
       ...(data.clientIncrementDollars !== undefined
         ? { clientPerMinuteIncrementCents: dollarsToCents(data.clientIncrementDollars) }
         : {}),
+      ...(data.clientBaseSeconds !== undefined
+        ? { clientBaseSeconds: data.clientBaseSeconds }
+        : {}),
+      ...(data.clientOverageUnitSeconds !== undefined
+        ? { clientOverageUnitSeconds: data.clientOverageUnitSeconds }
+        : {}),
+      ...(data.clientOverageGraceSeconds !== undefined
+        ? { clientOverageGraceSeconds: data.clientOverageGraceSeconds }
+        : {}),
+      ...(data.clientOverageProportional !== undefined
+        ? { clientOverageProportional: data.clientOverageProportional }
+        : {}),
     },
   });
 

@@ -3,5 +3,7 @@
  * `--grain-tile` so the reel compositor can reuse the same noise.
  */
 export function GrainOverlay() {
-  return <div aria-hidden className="grain-layer fixed inset-0 z-50" />;
+  // Hidden in print: it sits above everything, and on an invoice PDF the tile
+  // shows up as speckle across the page.
+  return <div aria-hidden className="grain-layer fixed inset-0 z-50 print:hidden" />;
 }

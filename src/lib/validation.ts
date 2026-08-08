@@ -67,6 +67,13 @@ export const wipeBatchSchema = z.object({
 export const updateClientRateSchema = z.object({
   clientRateDollars: z.number().nonnegative().max(100000).nullable(),
   clientIncrementDollars: z.number().nonnegative().max(100000).optional(),
+  // The shape of the ladder, not just its numbers. Previously only settable by
+  // editing the database directly, which meant any style added from the UI
+  // could only ever bill as a plain per-minute rate.
+  clientBaseSeconds: z.number().int().min(0).max(3600).optional(),
+  clientOverageUnitSeconds: z.number().int().min(1).max(3600).optional(),
+  clientOverageGraceSeconds: z.number().int().min(0).max(600).optional(),
+  clientOverageProportional: z.boolean().optional(),
 });
 
 export const invoiceUnlockSchema = z.object({

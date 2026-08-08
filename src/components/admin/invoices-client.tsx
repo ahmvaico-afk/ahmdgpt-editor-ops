@@ -3,7 +3,14 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
-import { centsToDollars, formatUsdCents } from "@/lib/pricing";
+import {
+  calculateClientPriceCents,
+  centsToDollars,
+  clientPricingShape,
+  clientPricingShapeFields,
+  formatUsdCents,
+  type ClientPricingShape,
+} from "@/lib/pricing";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select } from "@/components/ui/input";
@@ -97,34 +104,6 @@ function InvoicesWorkspace() {
   const styles = ratesData?.styles ?? [];
   const batches = batchesData?.batches ?? [];
 
-  async function updateRate(style: Style, dollars: string) {
-    const value = dollars === "" ? null : parseFloat(dollars);
-    if (value !== null && !Number.isFinite(value)) return;
-    await fetch(`/api/admin/invoices/rates/${style.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clientRateDollars: value }),
-    });
-    mutateRates();
-  }
-
-  async function updateIncrement(style: Style, dollars: string) {
-    const value = parseFloat(dollars || "0");
-    if (!Number.isFinite(value)) return;
-    await fetch(`/api/admin/invoices/rates/${style.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        clientRateDollars:
-          style.clientRatePerMinuteCents != null
-            ? centsToDollars(style.clientRatePerMinuteCents)
-            : null,
-        clientIncrementDollars: value,
-      }),
-    });
-    mutateRates();
-  }
-
   function openInvoice() {
     if (!batch) return;
     const params = new URLSearchParams();
@@ -148,61 +127,9 @@ function InvoicesWorkspace() {
           Client billing rates
         </h2>
         <Card className="divide-y divide-border">
-          {styles.map((s) => {
-            const hasBase = s.clientBaseSeconds > 0;
-            const baseLabel = hasBase
-              ? `${Math.floor(s.clientBaseSeconds / 60)}:${String(s.clientBaseSeconds % 60).padStart(2, "0")}`
-              : null;
-            const overageUnitLabel = s.clientOverageUnitSeconds === 30 ? "30s" : "min";
-            return (
-              <div key={s.id} className="flex flex-wrap items-center gap-3 p-4">
-                <span className="min-w-[10rem] flex-1 text-sm text-text">{s.name}</span>
-                {s.isCustomPricing ? (
-                  <span className="font-mono text-xs uppercase tracking-wider text-muted-2">
-                    Custom style — set per invoice manually
-                  </span>
-                ) : (
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-muted">$</span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      defaultValue={
-                        s.clientRatePerMinuteCents != null
-                          ? centsToDollars(s.clientRatePerMinuteCents)
-                          : ""
-                      }
-                      onBlur={(e) => updateRate(s, e.target.value)}
-                      placeholder="not set"
-                      className="!w-24"
-                    />
-                    {hasBase ? (
-                      <>
-                        <span className="text-muted">flat up to {baseLabel}, +$</span>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          defaultValue={centsToDollars(s.clientPerMinuteIncrementCents)}
-                          onBlur={(e) => updateIncrement(s, e.target.value)}
-                          className="!w-20"
-                        />
-                        <span className="text-muted">
-                          per {overageUnitLabel} after
-                          {s.clientOverageGraceSeconds > 0
-                            ? ` (${s.clientOverageGraceSeconds}s grace)`
-                            : ""}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-muted">/ min flat</span>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {styles.map((s) => (
+            <RateRow key={s.id} style={s} onSaved={mutateRates} />
+          ))}
         </Card>
       </section>
 
@@ -238,6 +165,136 @@ function InvoicesWorkspace() {
           <BatchPreview batchNumber={Number(batch)} />
         )}
       </section>
+    </div>
+  );
+}
+
+const SHAPE_OPTIONS: { value: ClientPricingShape; label: string }[] = [
+  { value: "per-minute", label: "Per minute — no flat base" },
+  { value: "tiered", label: "Flat base, then +$ per 30s (5s grace)" },
+  { value: "prorated", label: "Flat base, then +$ per minute, prorated" },
+];
+
+/** Durations previewed under each style so a wrong ladder is obvious on sight. */
+const PREVIEW_MINUTES = [1, 2, 3, 5];
+
+function RateRow({ style, onSaved }: { style: Style; onSaved: () => void }) {
+  const [rate, setRate] = useState(
+    style.clientRatePerMinuteCents != null ? String(centsToDollars(style.clientRatePerMinuteCents)) : ""
+  );
+  const [increment, setIncrement] = useState(String(centsToDollars(style.clientPerMinuteIncrementCents)));
+  const [shape, setShape] = useState<ClientPricingShape>(clientPricingShape(style));
+  const [baseMinutes, setBaseMinutes] = useState(String((style.clientBaseSeconds || 120) / 60));
+  const [saving, setSaving] = useState(false);
+
+  const rateDollars = rate === "" ? null : parseFloat(rate);
+  const incrementDollars = parseFloat(increment || "0");
+  const baseSeconds = Math.round(parseFloat(baseMinutes || "0") * 60);
+
+  // Always sends the whole client ladder, never a partial patch — an earlier
+  // version sent one field at a time and clobbered the others.
+  async function save() {
+    if (rateDollars !== null && !Number.isFinite(rateDollars)) return;
+    if (!Number.isFinite(incrementDollars) || !Number.isFinite(baseSeconds)) return;
+    setSaving(true);
+    try {
+      await fetch(`/api/admin/invoices/rates/${style.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientRateDollars: rateDollars,
+          clientIncrementDollars: incrementDollars,
+          ...clientPricingShapeFields(shape, Math.max(0, baseSeconds)),
+        }),
+      });
+      onSaved();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (style.isCustomPricing) {
+    return (
+      <div className="flex flex-wrap items-center gap-3 p-4">
+        <span className="min-w-[10rem] flex-1 text-sm text-text">{style.name}</span>
+        <span className="font-mono text-xs uppercase tracking-wider text-muted-2">
+          Custom style — set per invoice manually
+        </span>
+      </div>
+    );
+  }
+
+  const previewConfig = {
+    clientRatePerMinuteCents: rateDollars === null ? 0 : Math.round(rateDollars * 100),
+    clientPerMinuteIncrementCents: Math.round((incrementDollars || 0) * 100),
+    ...clientPricingShapeFields(shape, Math.max(0, baseSeconds || 0)),
+  };
+
+  return (
+    <div className="flex flex-col gap-3 p-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="min-w-[10rem] flex-1 text-sm text-text">{style.name}</span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-muted">$</span>
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            value={rate}
+            onChange={(e) => setRate(e.target.value)}
+            placeholder="not set"
+            className="!w-24"
+          />
+          {shape === "per-minute" ? (
+            <span className="text-muted">per minute</span>
+          ) : (
+            <>
+              <span className="text-muted">flat up to</span>
+              <Input
+                type="number"
+                step="0.5"
+                min="0"
+                value={baseMinutes}
+                onChange={(e) => setBaseMinutes(e.target.value)}
+                className="!w-16"
+              />
+              <span className="text-muted">min, then +$</span>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={increment}
+                onChange={(e) => setIncrement(e.target.value)}
+                className="!w-20"
+              />
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <Select
+          value={shape}
+          onChange={(e) => setShape(e.target.value as ClientPricingShape)}
+          className="!w-auto"
+        >
+          {SHAPE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
+        <Button size="sm" onClick={save} disabled={saving}>
+          {saving ? "Saving…" : "Save"}
+        </Button>
+        <p className="font-mono text-[11px] text-muted-2">
+          {rateDollars === null
+            ? "no rate set"
+            : PREVIEW_MINUTES.map(
+                (m) => `${m}:00 ${formatUsdCents(calculateClientPriceCents(m, previewConfig))}`
+              ).join(" · ")}
+        </p>
+      </div>
     </div>
   );
 }

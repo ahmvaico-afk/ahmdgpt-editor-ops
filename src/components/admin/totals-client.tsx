@@ -8,6 +8,7 @@ import { formatDuration } from "@/lib/duration";
 import { formatDate } from "@/lib/date";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
+import type { BatchInfo } from "@/lib/types";
 
 interface EditorTotal {
   editorId: string;
@@ -20,12 +21,31 @@ interface EditorTotal {
 }
 
 export function TotalsClient() {
-  const { data } = useSWR<{ totals: EditorTotal[] }>("/api/admin/editor-totals", fetcher, {
-    refreshInterval: 15000,
-  });
+  const [batch, setBatch] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
 
+  const { data: batchesData } = useSWR<{ currentBatch: number; batches: BatchInfo[] }>(
+    "/api/admin/batches",
+    fetcher,
+    { refreshInterval: 15000 }
+  );
+  const { data } = useSWR<{
+    totals: EditorTotal[];
+    grandTotalCents: number;
+    grandVideoCount: number;
+  }>(`/api/admin/editor-totals${batch ? `?batch=${batch}` : ""}`, fetcher, {
+    refreshInterval: 15000,
+  });
+
   const totals = data?.totals ?? [];
+  const batches = batchesData?.batches ?? [];
+  // Same union as the dashboard tabs: a batch you've just opened has no
+  // submissions yet, so grouping alone would leave it out.
+  const batchTabs = batchesData
+    ? Array.from(new Set([...batches.map((b) => b.number), batchesData.currentBatch])).sort(
+        (a, b) => b - a
+      )
+    : [];
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-6 py-8">
@@ -34,9 +54,50 @@ export function TotalsClient() {
         Click an editor to see every video they&rsquo;ve submitted, with duration and price.
       </p>
 
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            onClick={() => {
+              setBatch("");
+              setExpanded(null);
+            }}
+            className={`rounded-full px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors ${
+              batch === "" ? "bg-accent text-bg" : "bg-surface-2 text-muted hover:text-text"
+            }`}
+          >
+            All batches
+          </button>
+          {batchTabs.map((number) => (
+            <button
+              key={number}
+              onClick={() => {
+                setBatch(String(number));
+                setExpanded(null);
+              }}
+              className={`rounded-full px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors ${
+                batch === String(number)
+                  ? "bg-accent text-bg"
+                  : "bg-surface-2 text-muted hover:text-text"
+              }`}
+            >
+              Batch {number}
+            </button>
+          ))}
+        </div>
+        {data && (
+          <p className="font-mono text-xs text-muted">
+            {batch ? `Batch ${batch}` : "All batches"} · {data.grandVideoCount} video
+            {data.grandVideoCount === 1 ? "" : "s"} ·{" "}
+            <span className="text-green">{formatCents(data.grandTotalCents)}</span>
+          </p>
+        )}
+      </div>
+
       <Card className="divide-y divide-border">
         {totals.length === 0 && (
-          <p className="p-6 text-center text-sm text-muted">No editors yet.</p>
+          <p className="p-6 text-center text-sm text-muted">
+            {batch ? `Nobody submitted anything in Batch ${batch}.` : "No editors yet."}
+          </p>
         )}
         {totals.map((t) => (
           <div key={t.editorId}>
@@ -79,7 +140,9 @@ export function TotalsClient() {
                 <span className="text-muted">{expanded === t.editorId ? "▲" : "▼"}</span>
               </div>
             </button>
-            {expanded === t.editorId && <EditorVideoList editorId={t.editorId} />}
+            {expanded === t.editorId && (
+              <EditorVideoList editorId={t.editorId} batch={batch} />
+            )}
           </div>
         ))}
       </Card>
@@ -98,9 +161,9 @@ interface SubmissionRow {
   submittedAt: string;
 }
 
-function EditorVideoList({ editorId }: { editorId: string }) {
+function EditorVideoList({ editorId, batch }: { editorId: string; batch: string }) {
   const { data } = useSWR<{ items: SubmissionRow[] }>(
-    `/api/submissions?editorId=${editorId}&page=1`,
+    `/api/submissions?editorId=${editorId}&page=1${batch ? `&batch=${batch}` : ""}`,
     fetcher
   );
   const items = data?.items ?? [];

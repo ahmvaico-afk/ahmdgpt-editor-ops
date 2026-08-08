@@ -40,6 +40,10 @@ its instructions to push this folder to it.
      on your computer and pasting the output)
    - `ADMIN_NAME`, `ADMIN_CODE`, `ADMIN_PIN` — whatever you want your own owner
      login to be (e.g. `Ahmed`, `owner`, `847213`). Pick a PIN that isn't `123456`.
+   - `INVOICE_PASSWORD` — the second password that unlocks the Invoices tab, so
+     that someone with the owner login still can't see client billing. If you
+     leave this unset the app falls back to a default that's visible in the
+     source code, so set it to something only you know.
 4. Click **Deploy**.
 
 ## 4. Set up the database tables
