@@ -79,3 +79,18 @@ export const updateClientRateSchema = z.object({
 export const invoiceUnlockSchema = z.object({
   password: z.string().min(1).max(200),
 });
+
+/**
+ * The config blob is deliberately `unknown` here — `normalizeConfig` in
+ * lib/hook/spec.ts is the single authority on shape and bounds, so validating
+ * it twice would just be two places to keep in sync.
+ */
+export const createHookPresetSchema = z.object({
+  name: z.string().trim().min(1).max(60),
+  config: z.unknown(),
+});
+
+export const updateHookPresetSchema = z.object({
+  name: z.string().trim().min(1).max(60).optional(),
+  config: z.unknown().optional(),
+});

@@ -83,6 +83,12 @@ export function DashboardClient({
         </div>
         <div className="flex items-center gap-3">
           <Link
+            href={`/portal/${editorCode}/hook-tool`}
+            className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
+          >
+            Hook Text
+          </Link>
+          <Link
             href={`/portal/${editorCode}/leaderboard`}
             className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
           >

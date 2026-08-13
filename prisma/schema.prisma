@@ -23,6 +23,28 @@ model Editor {
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   submissions VideoSubmission[]
+  hookPresets HookPreset[]
+}
+
+/// A saved hook-text style for the overlay tool in the editor portal.
+model HookPreset {
+  id   String  @id @default(uuid())
+  name String
+  /// The built-in house style. Exactly one row carries this, and it is
+  /// read-only for everyone — editors duplicate it rather than edit it.
+  isDefault Boolean @default(false)
+  /// Null means global (the default, visible to every editor). Otherwise the
+  /// preset belongs to that editor and only they can see or change it.
+  ownerEditorId String?
+  owner         Editor? @relation(fields: [ownerEditorId], references: [id], onDelete: Cascade)
+  /// Whole HookConfig blob — see lib/hook/spec.ts. Stored loose on purpose so
+  /// adding a style token doesn't need a migration; normalizeConfig backfills
+  /// anything an older preset predates.
+  config    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerEditorId])
 }
 
 model AdminUser {
