@@ -177,14 +177,25 @@ export function renderHook(
 
   const { lines, maxWidth } = layout(ctx, text, config);
   const lineHeight = config.fontSize * config.lineHeight;
-  const textHeight = lineHeight * lines.length;
 
   const hasPill = config.pillMode !== "none" && config.pillOpacity > 0;
   const padX = hasPill ? config.pillPadX : 0;
   const padY = hasPill ? config.pillPadY : 0;
 
+  /**
+   * Plates are built around the cap height, not the line box. Sizing them off
+   * the line box left the padding lopsided — the first line got `padY` above it
+   * while the last got `padY + leading` below, which reads as a plate that is
+   * too tight at the top and too loose at the bottom.
+   *
+   * 0.73 is cap height as a fraction of em for the grotesques on offer; close
+   * enough for all three that measuring per-face isn't worth the reflow.
+   */
+  const capHeight = config.fontSize * 0.73;
+  const pillHeight = capHeight + padY * 2;
+
   const blockWidth = maxWidth + padX * 2;
-  const blockHeight = textHeight + padY * 2;
+  const blockHeight = (lines.length - 1) * lineHeight + pillHeight;
 
   const blockX =
     config.align === "left"
@@ -228,16 +239,16 @@ export function renderHook(
             : config.align === "right"
               ? blockX + blockWidth - w
               : blockX + (blockWidth - w) / 2;
-        roundRect(ctx, x, blockY + i * lineHeight, w, lineHeight + padY * 2, config.pillRadius);
+        roundRect(ctx, x, blockY + i * lineHeight, w, pillHeight, config.pillRadius);
         ctx.fill();
       });
     }
     clearShadow();
   }
 
-  // Baseline of the first line. 0.74 of the line box puts the cap height
-  // optically centred in the plate for the grotesques we offer.
-  const firstBaseline = blockY + padY + config.fontSize * 0.74;
+  // Sits the first line's caps exactly `padY` below the plate's top edge, which
+  // is what makes the padding symmetric on every line.
+  const firstBaseline = blockY + padY + capHeight;
 
   const gaps = spacingMap(text, config);
   const spaceWidth = ctx.measureText(" ").width;

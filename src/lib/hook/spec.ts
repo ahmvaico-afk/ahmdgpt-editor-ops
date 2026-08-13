@@ -86,7 +86,9 @@ export const HOUSE_STYLE: HookConfig = {
   pillOpacity: 1,
   pillRadius: 18,
   pillPadX: 26,
-  pillPadY: 14,
+  // Deep enough that consecutive plates overlap slightly and read as one
+  // stepped shape, the way the reference hooks do, rather than as separate bars.
+  pillPadY: 19,
 
   strokeColor: "#000000",
   strokeWidth: 0,

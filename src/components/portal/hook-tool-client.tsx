@@ -240,11 +240,13 @@ export function HookToolClient() {
         preview is sticky, so changing a setting never scrolls it out of view.
         Sticks below the portal header, which is itself sticky at ~57px.
       */}
-      <div className="lg:grid lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] lg:items-start lg:gap-8">
+      <div className="lg:grid lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)] lg:items-start lg:gap-8">
         <div className="sticky top-[56px] z-30 -mx-4 mb-5 border-b border-border bg-bg/95 px-4 pb-4 pt-3 backdrop-blur sm:-mx-6 sm:px-6 lg:top-6 lg:mx-0 lg:rounded-xl lg:border lg:p-4 lg:backdrop-blur-none">
           {/* The checkerboard is what tells you the export really is transparent. */}
           <div
-            className="flex max-h-[32vh] justify-center overflow-hidden rounded-lg border border-border lg:max-h-[58vh]"
+            // items-center matters: a flex parent defaults to align stretch,
+            // which overrides the canvas's auto height and squashes the 9:16.
+            className="flex items-center justify-center overflow-hidden rounded-lg border border-border"
             style={{
               backgroundColor: "#1a1a1a",
               backgroundImage: "repeating-conic-gradient(#242424 0% 25%, #1a1a1a 0% 50%)",
@@ -255,7 +257,10 @@ export function HookToolClient() {
               ref={canvasRef}
               width={HOOK_W}
               height={HOOK_H}
-              className="block h-auto max-h-full w-auto max-w-full"
+              // Capped in vh rather than against the parent: a percentage
+              // max-height resolves to none when the parent's height is auto,
+              // which let the 9:16 frame overflow instead of scaling to fit.
+              className="block h-auto w-auto max-h-[64vh] max-w-full lg:max-h-[72vh]"
             />
           </div>
           <div className="mt-3 flex gap-2">
