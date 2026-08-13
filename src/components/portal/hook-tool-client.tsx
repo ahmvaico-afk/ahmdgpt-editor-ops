@@ -23,6 +23,7 @@ import {
   type HookConfig,
   type HookFontKey,
   type HookPillMode,
+  type HookTextCase,
 } from "@/lib/hook/spec";
 
 interface Preset {
@@ -457,14 +458,18 @@ export function HookToolClient() {
               format={(v) => `${Math.round(v * 100)}%`}
               onChange={(v) => set("emojiScale", v)}
             />
-            <div className="flex flex-wrap items-center gap-4">
-              <Swatch label="Text" value={config.textColor} onChange={(v) => set("textColor", v)} />
-              <Toggle
-                label="ALL CAPS"
-                checked={config.uppercase}
-                onChange={(v) => set("uppercase", v)}
+            <Field label="Caps">
+              <Segmented
+                options={[
+                  { value: "none", label: "As typed" },
+                  { value: "upper", label: "ALL CAPS" },
+                  { value: "title", label: "Title Case" },
+                ]}
+                value={config.textCase}
+                onChange={(v) => set("textCase", v as HookTextCase)}
               />
-            </div>
+            </Field>
+            <Swatch label="Text" value={config.textColor} onChange={(v) => set("textColor", v)} />
             <Slider
               label="Outline"
               value={config.strokeWidth}
@@ -698,24 +703,3 @@ function Swatch({
   );
 }
 
-function Toggle({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  return (
-    <label className="flex cursor-pointer items-center gap-2">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 accent-accent"
-      />
-      <span className="font-mono text-[11px] uppercase tracking-wider text-muted">{label}</span>
-    </label>
-  );
-}

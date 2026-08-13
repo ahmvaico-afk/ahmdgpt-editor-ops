@@ -21,6 +21,12 @@ export type HookAnchor = "top" | "middle" | "bottom";
  * common short-form look. `none` drops the plate for outline-only text.
  */
 export type HookPillMode = "block" | "line" | "none";
+/**
+ * `none` renders exactly what was typed — the default, so casing stays the
+ * editor's decision rather than something the tool imposes. The other two are
+ * applied at draw time only; the stored text is never rewritten.
+ */
+export type HookTextCase = "none" | "upper" | "title";
 
 export interface HookConfig {
   fontKey: HookFontKey;
@@ -31,7 +37,7 @@ export interface HookConfig {
   letterSpacing: number;
   lineHeight: number;
   textColor: string;
-  uppercase: boolean;
+  textCase: HookTextCase;
 
   pillMode: HookPillMode;
   pillColor: string;
@@ -79,7 +85,9 @@ export const HOUSE_STYLE: HookConfig = {
   letterSpacing: -0.01,
   lineHeight: 1.34,
   textColor: "#000000",
-  uppercase: true,
+  // As typed. The reference hooks are in caps, but that's a per-hook call the
+  // editor makes with the Caps control — not something to force on every line.
+  textCase: "none",
 
   pillMode: "line",
   pillColor: "#ffffff",
@@ -152,7 +160,10 @@ function colour(value: unknown, fallback: string): string {
  * the API both go through this, so neither has to trust its input.
  */
 export function normalizeConfig(input: unknown): HookConfig {
-  const raw = (input ?? {}) as Partial<Record<keyof HookConfig, unknown>>;
+  // `uppercase` is the retired boolean, still present in presets saved earlier.
+  const raw = (input ?? {}) as Partial<Record<keyof HookConfig, unknown>> & {
+    uppercase?: unknown;
+  };
   const d = HOUSE_STYLE;
   const L = HOOK_LIMITS;
   const num = (v: unknown, fallback: number, min: number, max: number) =>
@@ -174,6 +185,14 @@ export function normalizeConfig(input: unknown): HookConfig {
     raw.anchor === "middle" || raw.anchor === "bottom" || raw.anchor === "top"
       ? raw.anchor
       : d.anchor;
+  const textCase: HookTextCase =
+    raw.textCase === "upper" || raw.textCase === "title" || raw.textCase === "none"
+      ? raw.textCase
+      : // Presets saved before casing became a three-way choice carried a
+        // boolean instead; honour it so nobody's saved look changes silently.
+        raw.uppercase === true
+        ? "upper"
+        : d.textCase;
 
   return {
     fontKey,
@@ -184,7 +203,7 @@ export function normalizeConfig(input: unknown): HookConfig {
     letterSpacing: num(raw.letterSpacing, d.letterSpacing, L.letterSpacing.min, L.letterSpacing.max),
     lineHeight: num(raw.lineHeight, d.lineHeight, L.lineHeight.min, L.lineHeight.max),
     textColor: colour(raw.textColor, d.textColor),
-    uppercase: typeof raw.uppercase === "boolean" ? raw.uppercase : d.uppercase,
+    textCase,
 
     pillMode,
     pillColor: colour(raw.pillColor, d.pillColor),

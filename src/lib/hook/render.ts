@@ -15,6 +15,20 @@ type Atom =
   | { kind: "word"; text: string; width: number }
   | { kind: "emoji"; codes: string; width: number };
 
+/**
+ * Casing is a display transform, never applied to the stored text — switching
+ * back to "as typed" has to return the editor's original wording intact.
+ */
+function applyCase(value: string, textCase: HookConfig["textCase"]): string {
+  if (textCase === "upper") return value.toUpperCase();
+  if (textCase === "title") {
+    // Only the first letter of each run of letters, so "DON'T" keeps its
+    // apostrophe intact rather than becoming "Don'T".
+    return value.toLowerCase().replace(/(^|\s)(\p{L})/gu, (_, lead, ch) => lead + ch.toUpperCase());
+  }
+  return value;
+}
+
 type Line = { atoms: Atom[]; width: number };
 
 /** Canvas letterSpacing is recent; where it's missing we draw at natural tracking. */
@@ -44,7 +58,7 @@ function toAtoms(ctx: CanvasRenderingContext2D, text: string, config: HookConfig
       atoms.push({ kind: "emoji", codes: seg.codes, width: emojiSize });
       continue;
     }
-    const value = config.uppercase ? seg.value.toUpperCase() : seg.value;
+    const value = applyCase(seg.value, config.textCase);
     // Keep the split on whitespace but drop the whitespace itself; the space
     // advance is added back between atoms at layout time.
     const words = value.split(/(\s+)/);
@@ -76,7 +90,7 @@ function spacingMap(text: string, config: HookConfig): boolean[] {
       pendingSpace = false;
       continue;
     }
-    const value = config.uppercase ? seg.value.toUpperCase() : seg.value;
+    const value = applyCase(seg.value, config.textCase);
     const parts = value.split(/(\s+)/);
     for (const part of parts) {
       if (part === "") continue;
