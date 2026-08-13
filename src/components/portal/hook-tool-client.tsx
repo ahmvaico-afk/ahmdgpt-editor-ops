@@ -227,32 +227,53 @@ export function HookToolClient() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8">
-      <div>
+    <div className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+      <div className="mb-5">
         <h1 className="font-display text-2xl font-extrabold text-text">Hook Text</h1>
         <p className="mt-1 text-sm text-muted">
           Type the hook, pick a look, download a transparent PNG. Drop it on top of your clip.
         </p>
       </div>
 
-      {/* The checkerboard is what tells you the export really is transparent. */}
-      <div
-        className="overflow-hidden rounded-xl border border-border"
-        style={{
-          backgroundColor: "#1a1a1a",
-          backgroundImage:
-            "repeating-conic-gradient(#242424 0% 25%, #1a1a1a 0% 50%)",
-          backgroundSize: "22px 22px",
-        }}
-      >
-        <canvas
-          ref={canvasRef}
-          width={HOOK_W}
-          height={HOOK_H}
-          className="mx-auto block h-auto w-full max-w-[300px]"
-        />
-      </div>
+      {/*
+        Two columns on a wide screen, stacked on a phone — but in both cases the
+        preview is sticky, so changing a setting never scrolls it out of view.
+        Sticks below the portal header, which is itself sticky at ~57px.
+      */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] lg:items-start lg:gap-8">
+        <div className="sticky top-[56px] z-30 -mx-4 mb-5 border-b border-border bg-bg/95 px-4 pb-4 pt-3 backdrop-blur sm:-mx-6 sm:px-6 lg:top-6 lg:mx-0 lg:rounded-xl lg:border lg:p-4 lg:backdrop-blur-none">
+          {/* The checkerboard is what tells you the export really is transparent. */}
+          <div
+            className="flex max-h-[32vh] justify-center overflow-hidden rounded-lg border border-border lg:max-h-[58vh]"
+            style={{
+              backgroundColor: "#1a1a1a",
+              backgroundImage: "repeating-conic-gradient(#242424 0% 25%, #1a1a1a 0% 50%)",
+              backgroundSize: "22px 22px",
+            }}
+          >
+            <canvas
+              ref={canvasRef}
+              width={HOOK_W}
+              height={HOOK_H}
+              className="block h-auto max-h-full w-auto max-w-full"
+            />
+          </div>
+          <div className="mt-3 flex gap-2">
+            <Button onClick={download} className="flex-1">
+              Download PNG
+            </Button>
+            <Button variant="outline" onClick={copyImage}>
+              Copy
+            </Button>
+          </div>
+          {toast && (
+            <p className="mt-2 text-center font-mono text-[11px] uppercase tracking-wider text-green">
+              {toast}
+            </p>
+          )}
+        </div>
 
+        <div className="flex flex-col gap-5">
       <Card className="flex flex-col gap-3 p-4">
         <textarea
           ref={textRef}
@@ -570,21 +591,8 @@ export function HookToolClient() {
           </Card>
         )}
       </section>
-
-      <div className="sticky bottom-4 flex flex-wrap gap-2">
-        <Button onClick={download} className="flex-1">
-          Download PNG
-        </Button>
-        <Button variant="outline" onClick={copyImage}>
-          Copy
-        </Button>
+        </div>
       </div>
-
-      {toast && (
-        <p className="text-center font-mono text-[11px] uppercase tracking-wider text-green">
-          {toast}
-        </p>
-      )}
     </div>
   );
 }

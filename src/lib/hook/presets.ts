@@ -47,10 +47,22 @@ function serialize(row: PresetRow, editorId: string): SerializedPreset {
  * Creates the built-in house style on first use rather than in the seed, so an
  * already-deployed database picks it up without anyone running a script.
  * Idempotent: concurrent callers can race, and the loser just reads the winner's row.
+ *
+ * Also re-syncs the stored config to HOUSE_STYLE. The default is read-only in
+ * the UI, so the code is its source of truth — that way tuning the house look
+ * ships with a deploy instead of needing a hand-written UPDATE against prod.
  */
 export async function ensureDefaultPreset(): Promise<void> {
   const existing = await prisma.hookPreset.findFirst({ where: { isDefault: true } });
-  if (existing) return;
+  if (existing) {
+    if (JSON.stringify(existing.config) !== JSON.stringify(HOUSE_STYLE)) {
+      await prisma.hookPreset.update({
+        where: { id: existing.id },
+        data: { name: DEFAULT_PRESET_NAME, config: toJson(HOUSE_STYLE) },
+      });
+    }
+    return;
+  }
   try {
     await prisma.hookPreset.create({
       data: {

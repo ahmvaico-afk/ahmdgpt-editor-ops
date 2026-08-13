@@ -60,27 +60,33 @@ export interface HookConfig {
 }
 
 /**
- * The house style, matched to the reference hooks: a single white rounded plate
- * in the upper third, heavy near-black grotesque, centred, tight leading, with
- * the emoji riding inline at the end of the last line.
+ * The house style, matched to the reference hooks: white rounded plates hugging
+ * each line, set in heavy near-black grotesque caps, centred in the upper third,
+ * with the emoji riding inline at the end of the last line.
+ *
+ * Per-line rather than one block because the reference hooks step in at the
+ * shorter line — the plate follows the text, it isn't a banner behind it.
  *
  * Kept as the built-in default preset — editors start here and tweak from it.
  */
 export const HOUSE_STYLE: HookConfig = {
   fontKey: "sans",
   fontWeight: 800,
-  fontSize: 62,
-  letterSpacing: -0.015,
-  lineHeight: 1.2,
+  // Sized against the reference hook: "SHE ALMOST DIED FROM SOMETHING HER"
+  // has to land on one line, which it does at 42 (869px of the 898px a
+  // 0.88 max-width leaves once padding is taken out) and wraps at 44.
+  fontSize: 42,
+  letterSpacing: -0.01,
+  lineHeight: 1.34,
   textColor: "#000000",
-  uppercase: false,
+  uppercase: true,
 
-  pillMode: "block",
+  pillMode: "line",
   pillColor: "#ffffff",
   pillOpacity: 1,
-  pillRadius: 24,
-  pillPadX: 38,
-  pillPadY: 26,
+  pillRadius: 18,
+  pillPadX: 26,
+  pillPadY: 14,
 
   strokeColor: "#000000",
   strokeWidth: 0,
@@ -99,7 +105,7 @@ export const HOUSE_STYLE: HookConfig = {
 export const DEFAULT_PRESET_NAME = "AHMD.GPT House Style";
 
 /** Sample copy for an untouched editor, so the preview is never an empty box. */
-export const SAMPLE_HOOK_TEXT = "What they DON'T tell you about this..😳";
+export const SAMPLE_HOOK_TEXT = "She almost died from something her doctor never checked 😳⚠️";
 
 export const HOOK_FONT_LABELS: Record<HookFontKey, string> = {
   sans: "Inter — house hook font",
