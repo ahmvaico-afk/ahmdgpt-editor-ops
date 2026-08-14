@@ -13,6 +13,7 @@ const LINKS = [
   { href: "/admin/editors", label: "Editors" },
   { href: "/admin/invoices", label: "Invoices" },
   { href: "/admin/reel", label: "Reel" },
+  { href: "/admin/covers", label: "Covers" },
 ];
 
 export function AdminHeader() {
