@@ -18,6 +18,8 @@ export const createSubmissionSchema = z.object({
   durationMinutes: z.number().positive().max(10000),
   customRatePerMinuteDollars: z.number().nonnegative().max(100000).optional(),
   notes: z.string().trim().max(2000).optional().or(z.literal("")),
+  /// Optional: a timed span the editor logged before this record existed.
+  workSessionId: z.string().min(1).max(64).optional(),
 });
 
 export const updateSubmissionSchema = z.object({
@@ -86,7 +88,9 @@ export const invoiceUnlockSchema = z.object({
  * it twice would just be two places to keep in sync.
  */
 export const startWorkSessionSchema = z.object({
-  submissionId: z.string().min(1).max(64),
+  /// What the editor calls the video they're starting, e.g. "Rosabella #2".
+  /// Not a submission id — that record doesn't exist until the work is done.
+  label: z.string().trim().min(1).max(120),
 });
 
 export const createRevisionSchema = z.object({

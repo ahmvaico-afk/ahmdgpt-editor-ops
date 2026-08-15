@@ -5,19 +5,18 @@ import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 
 interface OpenSession {
   id: string;
-  submissionId: string;
-  title: string;
+  label: string;
   startedAt: string;
 }
 
-interface SubmissionOption {
+export interface UnlinkedSession {
   id: string;
-  title: string;
-  status: string;
+  label: string;
+  minutes: number;
 }
 
 function elapsed(from: string, now: number): string {
@@ -31,23 +30,25 @@ function elapsed(from: string, now: number): string {
 }
 
 /**
- * Start/stop clock for the video an editor is currently working on.
+ * Start/stop clock for the video an editor is working on right now.
  *
- * Stops at submit, not at approval — QA's review queue is never charged to the
- * editor. If a video comes back for changes, starting it again opens a fresh
- * span and the total is the sum.
+ * The editor names the video here, before it exists as a submission — they add
+ * it properly, with its duration, once the work is finished, and pick this
+ * timing then. The clock stops at submit, never at approval, so QA's review
+ * queue is not charged to the editor.
  */
-export function WorkTimer({ submissions }: { submissions: SubmissionOption[] }) {
-  const { data, mutate } = useSWR<{ session: OpenSession | null }>(
+export function WorkTimer() {
+  const { data, mutate } = useSWR<{ session: OpenSession | null; unlinked: UnlinkedSession[] }>(
     "/api/work-sessions",
     fetcher,
     { refreshInterval: 30000 },
   );
-  const [choice, setChoice] = useState("");
+  const [label, setLabel] = useState("");
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
   const open = data?.session ?? null;
+  const waiting = data?.unlinked ?? [];
 
   // Ticks only while something is running, so an idle dashboard stays quiet.
   useEffect(() => {
@@ -57,14 +58,15 @@ export function WorkTimer({ submissions }: { submissions: SubmissionOption[] }) 
   }, [open]);
 
   async function start() {
-    if (!choice) return;
+    if (!label.trim()) return;
     setBusy(true);
     try {
       await fetch("/api/work-sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ submissionId: choice }),
+        body: JSON.stringify({ label: label.trim() }),
       });
+      setLabel("");
       await mutate();
     } finally {
       setBusy(false);
@@ -81,47 +83,54 @@ export function WorkTimer({ submissions }: { submissions: SubmissionOption[] }) 
     }
   }
 
-  if (open) {
-    return (
-      <Card className="flex flex-wrap items-center justify-between gap-3 border-accent/40 p-4">
-        <div className="min-w-0">
-          <p className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-accent">
-            <span className="status-dot" />
-            Working on
-          </p>
-          <p className="mt-0.5 truncate text-sm font-medium text-text">{open.title}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="font-mono text-xl tabular-nums text-text">
-            {elapsed(open.startedAt, now)}
-          </span>
-          <Button size="sm" variant="danger" disabled={busy} onClick={stop}>
-            Stop
-          </Button>
-        </div>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="flex flex-wrap items-end gap-3 p-4">
-      <div className="min-w-0 flex-1">
-        <label className="mb-1.5 block font-mono text-[11px] uppercase tracking-wider text-muted">
-          Start working on
-        </label>
-        <Select value={choice} onChange={(e) => setChoice(e.target.value)}>
-          <option value="">Pick a video…</option>
-          {submissions.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.title}
-              {s.status === "rejected" ? " (needs changes)" : ""}
-            </option>
-          ))}
-        </Select>
-      </div>
-      <Button disabled={busy || !choice} onClick={start}>
-        Start
-      </Button>
-    </Card>
+    <div className="flex flex-col gap-2">
+      {open ? (
+        <Card className="flex flex-wrap items-center justify-between gap-3 border-accent/50 p-4">
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-accent">
+              <span className="status-dot" />
+              Working on
+            </p>
+            <p className="mt-0.5 truncate text-sm font-medium text-text">{open.label}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-xl tabular-nums text-text">
+              {elapsed(open.startedAt, now)}
+            </span>
+            <Button size="sm" variant="danger" disabled={busy} onClick={stop}>
+              Stop
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <Card className="flex flex-wrap items-end gap-3 p-4">
+          <div className="min-w-0 flex-1">
+            <label className="mb-1.5 block font-mono text-[11px] uppercase tracking-wider text-muted">
+              Start the clock on
+            </label>
+            <Input
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && label.trim()) void start();
+              }}
+              placeholder="e.g. Rosabella #2"
+              maxLength={120}
+            />
+          </div>
+          <Button disabled={busy || !label.trim()} onClick={start}>
+            Start
+          </Button>
+        </Card>
+      )}
+
+      {waiting.length > 0 && (
+        <p className="px-1 font-mono text-[11px] text-muted">
+          {waiting.length} timed session{waiting.length === 1 ? "" : "s"} waiting to be attached —
+          pick one when you add the video.
+        </p>
+      )}
+    </div>
   );
 }

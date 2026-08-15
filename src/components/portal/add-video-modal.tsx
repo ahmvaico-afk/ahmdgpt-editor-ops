@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
@@ -32,6 +34,13 @@ export function AddVideoModal({
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [sessionId, setSessionId] = useState("");
+
+  // Timed spans the editor has already logged but not yet attached to a video.
+  const { data: timing, mutate: mutateTiming } = useSWR<{
+    unlinked: { id: string; label: string; minutes: number }[];
+  }>(open ? "/api/work-sessions" : null, fetcher);
+  const unlinked = timing?.unlinked ?? [];
 
   const selectedStyle = styles.find((s) => s.id === styleId) ?? null;
 
@@ -64,6 +73,7 @@ export function AddVideoModal({
     setDurationSec("");
     setRate("");
     setNotes("");
+    setSessionId("");
     setError(null);
   }
 
@@ -86,6 +96,9 @@ export function AddVideoModal({
           videoLink,
           notes,
           durationMinutes: parsedDuration,
+          // Attaches the time already logged against this video, if the editor
+          // ran the clock while working on it.
+          ...(sessionId ? { workSessionId: sessionId } : {}),
           ...(selectedStyle.isCustomPricing
             ? { customRatePerMinuteDollars: parseFloat(rate) }
             : {}),
@@ -96,6 +109,7 @@ export function AddVideoModal({
         setError(json.error ?? "Could not submit.");
         return;
       }
+      await mutateTiming();
       reset();
       onCreated();
       onClose();
@@ -214,6 +228,23 @@ export function AddVideoModal({
             </div>
           )}
         </div>
+
+        {unlinked.length > 0 && (
+          <div>
+            <Label>Time logged for this video</Label>
+            <Select value={sessionId} onChange={(e) => setSessionId(e.target.value)}>
+              <option value="">Don&rsquo;t attach any time</option>
+              {unlinked.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.label} — {u.minutes} min
+                </option>
+              ))}
+            </Select>
+            <p className="mt-1.5 text-xs text-muted-2">
+              Pick the stretch you timed while working on this one.
+            </p>
+          </div>
+        )}
 
         <div>
           <Label>Notes (optional)</Label>

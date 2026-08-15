@@ -139,6 +139,27 @@ export function LeaderboardClient({ viewerEditorId }: { viewerEditorId?: string 
                     {row.videoCount} video{row.videoCount === 1 ? "" : "s"} · {row.activeDays} day
                     {row.activeDays === 1 ? "" : "s"} active
                   </p>
+                  {/* Shows why the score landed where it did — an opaque
+                      number is the fastest way to make this feel rigged. */}
+                  <p className="mt-0.5 font-mono text-[11px] text-muted-2">
+                    {row.basePoints} base
+                    {row.meter < 100 && (
+                      <span className="text-warning">
+                        {" "}
+                        × {row.meter}% quality
+                        {row.editorRevisions > 0 &&
+                          ` (${row.editorRevisions} revision${row.editorRevisions === 1 ? "" : "s"})`}
+                      </span>
+                    )}
+                    {row.speedFactor !== 1 && (
+                      <span className={row.speedFactor > 1 ? "text-green" : "text-accent"}>
+                        {" "}
+                        × {row.speedFactor.toFixed(2)} speed
+                      </span>
+                    )}
+                    {row.minutesPerFinishedMinute != null &&
+                      ` · ${row.minutesPerFinishedMinute.toFixed(0)} min per finished minute`}
+                  </p>
                 </div>
               </div>
               <span className="font-mono text-lg font-bold text-text">{row.score}</span>

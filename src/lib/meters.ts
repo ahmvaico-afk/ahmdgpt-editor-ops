@@ -190,6 +190,5 @@ export async function getOpenSession(editorId: string) {
   return prisma.workSession.findFirst({
     where: { editorId, endedAt: null },
     orderBy: { startedAt: "desc" },
-    include: { submission: { select: { id: true, title: true } } },
   });
 }

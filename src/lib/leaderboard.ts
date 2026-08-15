@@ -59,7 +59,26 @@ export interface LeaderboardRow {
   activeDays: number;
   score: number;
   streak: number;
+  /** Base points before quality and speed are applied. */
+  basePoints: number;
+  /** Quality meter, 0-100. Scales the base — revisions cost you points. */
+  meter: number;
+  /** Speed against the batch median, 0.85-1.15. 1 when nothing was timed. */
+  speedFactor: number;
+  /** Minutes worked per finished minute of video, from approved videos only. */
+  minutesPerFinishedMinute: number | null;
+  editorRevisions: number;
 }
+
+/** Mirrors REVISION_COST in lib/meters.ts — minor, moderate, major. */
+const REVISION_PENALTY: Record<number, number> = { 1: 6, 2: 15, 3: 30 };
+
+/**
+ * How far speed is allowed to move a score. Deliberately narrow: the clock is
+ * self-reported, so it nudges the ranking rather than deciding it.
+ */
+const SPEED_FLOOR = 0.85;
+const SPEED_CEILING = 1.15;
 
 export interface LeaderboardResult {
   rows: LeaderboardRow[];
@@ -87,9 +106,18 @@ async function getStreakMap(): Promise<Map<string, number>> {
 }
 
 /**
- * Score rewards both volume and showing up daily: 10pts/video + 15pts per
- * distinct day with at least one submission. Rejected submissions don't
- * count — they weren't real completed work.
+ * Score = volume and turning up, scaled by quality, nudged by speed.
+ *
+ *   base  = 10pts/video + 15pts per distinct day with a submission
+ *   meter = 100 minus the average revision cost per video (editor's fault only)
+ *   speed = the batch median pace divided by yours, clamped
+ *
+ * The three multiply, which is the point: rushing out sloppy work raises the
+ * base but sinks the meter, and polishing forever protects the meter but drags
+ * the pace. Winning means clean work, quickly.
+ *
+ * Speed only counts approved or paid videos — an unapproved video isn't
+ * finished work yet, so its clock isn't final.
  */
 async function computeLeaderboardRows(
   where: Prisma.VideoSubmissionWhereInput
@@ -98,31 +126,115 @@ async function computeLeaderboardRows(
     where: { active: true },
     select: { id: true, name: true },
   });
+  // Sequential, not Promise.all: concurrent queries through the pg driver
+  // adapter's shared pool can corrupt prepared statements under load.
   const submissions = await prisma.videoSubmission.findMany({
     where: { ...where, status: { not: "rejected" } },
-    select: { editorId: true, submittedAt: true },
+    select: {
+      editorId: true,
+      submittedAt: true,
+      status: true,
+      durationMinutes: true,
+      revisions: { select: { severity: true, reason: true } },
+      workSessions: { select: { startedAt: true, endedAt: true } },
+    },
   });
   const streaks = await getStreakMap();
 
-  const byEditor = new Map<string, { count: number; days: Set<string> }>();
+  type Tally = {
+    count: number;
+    days: Set<string>;
+    penalty: number;
+    editorRevisions: number;
+    workedMinutes: number;
+    finishedMinutes: number;
+  };
+  const byEditor = new Map<string, Tally>();
+
   for (const s of submissions) {
-    const entry = byEditor.get(s.editorId) ?? { count: 0, days: new Set<string>() };
+    const entry: Tally = byEditor.get(s.editorId) ?? {
+      count: 0,
+      days: new Set<string>(),
+      penalty: 0,
+      editorRevisions: 0,
+      workedMinutes: 0,
+      finishedMinutes: 0,
+    };
     entry.count += 1;
     entry.days.add(karachiDateKey(s.submittedAt));
+
+    let videoPenalty = 0;
+    for (const r of s.revisions) {
+      if (r.reason === "brief_change") continue;
+      entry.editorRevisions += 1;
+      videoPenalty += REVISION_PENALTY[r.severity] ?? REVISION_PENALTY[1];
+    }
+    // Capped per video: one disaster shouldn't cost more than writing that
+    // video off entirely.
+    entry.penalty += Math.min(videoPenalty, 100);
+
+    const settled = s.status === "approved" || s.status === "paid";
+    if (settled && s.workSessions.length > 0) {
+      let ms = 0;
+      for (const w of s.workSessions) {
+        if (!w.endedAt) continue;
+        ms += Math.max(0, w.endedAt.getTime() - w.startedAt.getTime());
+      }
+      if (ms > 0) {
+        entry.workedMinutes += ms / 60_000;
+        entry.finishedMinutes += s.durationMinutes;
+      }
+    }
+
     byEditor.set(s.editorId, entry);
   }
+
+  // Everyone's pace, so each editor can be measured against the batch median
+  // rather than an arbitrary target.
+  const paces: number[] = [];
+  for (const t of byEditor.values()) {
+    if (t.finishedMinutes > 0) paces.push(t.workedMinutes / t.finishedMinutes);
+  }
+  paces.sort((a, b) => a - b);
+  const medianPace =
+    paces.length === 0
+      ? null
+      : paces.length % 2 === 1
+        ? paces[(paces.length - 1) / 2]
+        : (paces[paces.length / 2 - 1] + paces[paces.length / 2]) / 2;
 
   const rows: LeaderboardRow[] = editors.map((e) => {
     const entry = byEditor.get(e.id);
     const videoCount = entry?.count ?? 0;
     const activeDays = entry?.days.size ?? 0;
+    const basePoints = videoCount * 10 + activeDays * 15;
+
+    const meter =
+      videoCount === 0
+        ? 100
+        : Math.max(0, Math.min(100, Math.round(100 - (entry?.penalty ?? 0) / videoCount)));
+
+    const pace =
+      entry && entry.finishedMinutes > 0 ? entry.workedMinutes / entry.finishedMinutes : null;
+    // Neutral when there's nothing to compare — nobody is punished for the
+    // clock being new, or for being the only one who timed anything.
+    const speedFactor =
+      pace != null && medianPace != null && pace > 0
+        ? Math.max(SPEED_FLOOR, Math.min(SPEED_CEILING, medianPace / pace))
+        : 1;
+
     return {
       editorId: e.id,
       name: e.name,
       videoCount,
       activeDays,
-      score: videoCount * 10 + activeDays * 15,
+      score: Math.round(basePoints * (meter / 100) * speedFactor),
       streak: streaks.get(e.id) ?? 0,
+      basePoints,
+      meter,
+      speedFactor: Number(speedFactor.toFixed(3)),
+      minutesPerFinishedMinute: pace,
+      editorRevisions: entry?.editorRevisions ?? 0,
     };
   });
 

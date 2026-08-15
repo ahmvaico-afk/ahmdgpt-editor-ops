@@ -138,17 +138,23 @@ model Revision {
 /// and restarts if the video comes back for rework, so QA's review queue is
 /// never charged to the editor. Total editor time is the sum of these spans.
 model WorkSession {
-  id           String          @id @default(uuid())
+  id           String           @id @default(uuid())
   editorId     String
-  editor       Editor          @relation(fields: [editorId], references: [id], onDelete: Cascade)
-  submissionId String
-  submission   VideoSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  startedAt    DateTime        @default(now())
+  editor       Editor           @relation(fields: [editorId], references: [id], onDelete: Cascade)
+  /// What the editor called the video when they started the clock. The
+  /// submission doesn't exist yet at that point — they add the video, with its
+  /// duration, once the work is finished.
+  label        String           @default("")
+  /// Filled in when the editor finally adds the video and picks this session.
+  /// Null while the work is still in progress or unlinked.
+  submissionId String?
+  submission   VideoSubmission? @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  startedAt    DateTime         @default(now())
   /// Null while the timer is running. At most one open session per editor.
   endedAt      DateTime?
   /// True when the session was closed by the inactivity cap rather than by the
   /// editor, so a forgotten timer can be spotted instead of silently scoring.
-  autoClosed   Boolean         @default(false)
+  autoClosed   Boolean          @default(false)
 
   @@index([editorId])
   @@index([submissionId])

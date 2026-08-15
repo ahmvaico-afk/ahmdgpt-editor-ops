@@ -129,9 +129,7 @@ export function DashboardClient({
 
       {/* Sits above everything else: a timer you can't see is a timer you
           forget to stop, and forgotten timers wreck the meter maths. */}
-      <WorkTimer
-        submissions={items.map((i) => ({ id: i.id, title: i.title, status: i.status }))}
-      />
+      <WorkTimer />
 
       {personalStats && personalStats.currentStreak >= 1 && (
         <StreakBar streak={personalStats.currentStreak} />
