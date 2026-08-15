@@ -85,6 +85,16 @@ export const invoiceUnlockSchema = z.object({
  * lib/hook/spec.ts is the single authority on shape and bounds, so validating
  * it twice would just be two places to keep in sync.
  */
+export const startWorkSessionSchema = z.object({
+  submissionId: z.string().min(1).max(64),
+});
+
+export const createRevisionSchema = z.object({
+  severity: z.number().int().min(1).max(3),
+  reason: z.enum(["editor_error", "brief_change"]),
+  note: z.string().trim().max(400).optional(),
+});
+
 export const createHookPresetSchema = z.object({
   name: z.string().trim().min(1).max(60),
   config: z.unknown(),

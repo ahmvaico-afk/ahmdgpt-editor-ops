@@ -1,0 +1,84 @@
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdminSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { createRevisionSchema } from "@/lib/validation";
+
+/**
+ * Revisions are owner/QA-only in both directions: editors can see the ones
+ * logged against their own work through the meters, but only this route
+ * creates or removes them.
+ */
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await requireAdminSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const body = await request.json().catch(() => null);
+  const parsed = createRevisionSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Pick a severity and a reason." }, { status: 400 });
+  }
+
+  const submission = await prisma.videoSubmission.findUnique({
+    where: { id },
+    select: { id: true },
+  });
+  if (!submission) {
+    return NextResponse.json({ error: "Video not found." }, { status: 404 });
+  }
+
+  const revision = await prisma.revision.create({
+    data: {
+      submissionId: submission.id,
+      severity: parsed.data.severity,
+      reason: parsed.data.reason,
+      note: parsed.data.note || null,
+    },
+  });
+  return NextResponse.json({ revision }, { status: 201 });
+}
+
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await requireAdminSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+  const { id } = await params;
+  const revisions = await prisma.revision.findMany({
+    where: { submissionId: id },
+    orderBy: { createdAt: "asc" },
+  });
+  return NextResponse.json({ revisions });
+}
+
+/** Undo a mis-logged revision. `?revisionId=` identifies which. */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await requireAdminSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+  const { id } = await params;
+  const revisionId = request.nextUrl.searchParams.get("revisionId");
+  if (!revisionId) {
+    return NextResponse.json({ error: "Which revision?" }, { status: 400 });
+  }
+  // Matched on the submission too, so an id from another video can't be used.
+  const result = await prisma.revision.deleteMany({
+    where: { id: revisionId, submissionId: id },
+  });
+  if (result.count === 0) {
+    return NextResponse.json({ error: "Revision not found." }, { status: 404 });
+  }
+  return NextResponse.json({ ok: true });
+}

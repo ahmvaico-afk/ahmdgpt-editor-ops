@@ -14,6 +14,13 @@ enum SubmissionStatus {
   rejected
 }
 
+/// Who caused a revision. Only editor_error counts against an editor's meter —
+/// a client changing their mind is not the editor's mistake.
+enum RevisionReason {
+  editor_error
+  brief_change
+}
+
 model Editor {
   id          String            @id @default(uuid())
   name        String
@@ -22,8 +29,9 @@ model Editor {
   active      Boolean           @default(true)
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
-  submissions VideoSubmission[]
-  hookPresets HookPreset[]
+  submissions  VideoSubmission[]
+  hookPresets  HookPreset[]
+  workSessions WorkSession[]
 }
 
 /// A saved hook-text style for the overlay tool in the editor portal.
@@ -98,12 +106,52 @@ model VideoSubmission {
   submittedAt          DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
   notes                String?
+  revisions            Revision[]
+  workSessions         WorkSession[]
 
   @@index([editorId])
   @@index([styleId])
   @@index([status])
   @@index([submittedAt])
   @@index([batchNumber])
+}
+
+/// One round of changes QA sent back on a video. Logged by the owner/QA side
+/// only — editors can see their own but never create or edit them.
+model Revision {
+  id           String          @id @default(uuid())
+  submissionId String
+  submission   VideoSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  /// 1 minor, 2 moderate, 3 major. A typo fix and a re-edit are not the same
+  /// thing, so severity is scored rather than the raw count of revisions.
+  severity     Int
+  reason       RevisionReason  @default(editor_error)
+  note         String?
+  createdAt    DateTime        @default(now())
+
+  @@index([submissionId])
+}
+
+/// A single span of an editor actually working on a video.
+///
+/// Deliberately many-per-submission: the clock stops when the editor submits
+/// and restarts if the video comes back for rework, so QA's review queue is
+/// never charged to the editor. Total editor time is the sum of these spans.
+model WorkSession {
+  id           String          @id @default(uuid())
+  editorId     String
+  editor       Editor          @relation(fields: [editorId], references: [id], onDelete: Cascade)
+  submissionId String
+  submission   VideoSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  startedAt    DateTime        @default(now())
+  /// Null while the timer is running. At most one open session per editor.
+  endedAt      DateTime?
+  /// True when the session was closed by the inactivity cap rather than by the
+  /// editor, so a forgotten timer can be spotted instead of silently scoring.
+  autoClosed   Boolean         @default(false)
+
+  @@index([editorId])
+  @@index([submissionId])
 }
 
 /// Singleton row (id is always "singleton") holding admin-controlled app state, currently just the active batch counter.

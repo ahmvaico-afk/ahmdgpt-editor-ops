@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/admin/dashboard", label: "Dashboard" },
   { href: "/admin/totals", label: "Totals" },
   { href: "/admin/leaderboard", label: "Leaderboard" },
+  { href: "/admin/meters", label: "Meters" },
   { href: "/admin/styles", label: "Styles" },
   { href: "/admin/editors", label: "Editors" },
   { href: "/admin/invoices", label: "Invoices" },

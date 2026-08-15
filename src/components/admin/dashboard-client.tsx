@@ -11,6 +11,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { SummaryCards } from "@/components/admin/summary-cards";
 import { BatchManager } from "@/components/admin/batch-manager";
 import { EditSubmissionModal } from "@/components/edit-submission-modal";
+import { RevisionModal } from "@/components/admin/revision-modal";
 import { formatDuration } from "@/lib/duration";
 import { formatDate } from "@/lib/date";
 import type { AdminEditor, BatchInfo, Style, Submission, SubmissionStatus } from "@/lib/types";
@@ -24,6 +25,7 @@ export function AdminDashboardClient() {
   const [selectedBatch, setSelectedBatch] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [editTarget, setEditTarget] = useState<Submission | null>(null);
+  const [revisionTarget, setRevisionTarget] = useState<Submission | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
 
   const { data: editorsData } = useSWR<{ editors: AdminEditor[] }>(
@@ -258,6 +260,12 @@ export function AdminDashboardClient() {
               </span>
               <StatusBadge status={item.status} />
               <button
+                onClick={() => setRevisionTarget(item)}
+                className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-warning"
+              >
+                Revision
+              </button>
+              <button
                 onClick={() => setEditTarget(item)}
                 className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
               >
@@ -332,6 +340,13 @@ export function AdminDashboardClient() {
         submission={editTarget}
         styles={styles}
         onClose={() => setEditTarget(null)}
+        onSaved={() => mutate()}
+      />
+
+      <RevisionModal
+        key={revisionTarget?.id ?? "no-revision"}
+        submission={revisionTarget}
+        onClose={() => setRevisionTarget(null)}
         onSaved={() => mutate()}
       />
     </div>

@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AddVideoModal } from "@/components/portal/add-video-modal";
+import { WorkTimer } from "@/components/portal/work-timer";
 import { EditSubmissionModal } from "@/components/edit-submission-modal";
 import type { EditorSummary, Style, Submission } from "@/lib/types";
 
@@ -83,6 +84,12 @@ export function DashboardClient({
         </div>
         <div className="flex items-center gap-3">
           <Link
+            href={`/portal/${editorCode}/meters`}
+            className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
+          >
+            Meters
+          </Link>
+          <Link
             href={`/portal/${editorCode}/hook-tool`}
             className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
           >
@@ -119,6 +126,12 @@ export function DashboardClient({
           value={String(summary?.byStatus.find((s) => s.status === "paid")?.count ?? 0)}
         />
       </div>
+
+      {/* Sits above everything else: a timer you can't see is a timer you
+          forget to stop, and forgotten timers wreck the meter maths. */}
+      <WorkTimer
+        submissions={items.map((i) => ({ id: i.id, title: i.title, status: i.status }))}
+      />
 
       {personalStats && personalStats.currentStreak >= 1 && (
         <StreakBar streak={personalStats.currentStreak} />
