@@ -21,17 +21,32 @@ enum RevisionReason {
   brief_change
 }
 
+/// Where a piece of work has got to.
+///   working   - the clock is running
+///   submitted - handed to QA; the clock is stopped but can be resumed if the
+///               video comes back for changes
+///   finished  - done for good, locked, no more time can be added
+enum WorkItemStatus {
+  working
+  submitted
+  finished
+}
+
 model Editor {
   id          String            @id @default(uuid())
   name        String
   editorCode  String            @unique
   pinHash     String
   active      Boolean           @default(true)
+  /// Promoted to QA by the owner from the Editors tab. Lets this editor review
+  /// everyone else's work — log revisions, approve videos, sign off logged time
+  /// — but never their own, and never anything to do with money.
+  isQa        Boolean           @default(false)
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   submissions  VideoSubmission[]
   hookPresets  HookPreset[]
-  workSessions WorkSession[]
+  workItems    WorkItem[]
 }
 
 /// A saved hook-text style for the overlay tool in the editor portal.
@@ -107,7 +122,7 @@ model VideoSubmission {
   updatedAt            DateTime         @updatedAt
   notes                String?
   revisions            Revision[]
-  workSessions         WorkSession[]
+  workItem             WorkItem?
 
   @@index([editorId])
   @@index([styleId])
@@ -132,32 +147,49 @@ model Revision {
   @@index([submissionId])
 }
 
-/// A single span of an editor actually working on a video.
+/// One video an editor is working on, from first keystroke to final sign-off.
 ///
-/// Deliberately many-per-submission: the clock stops when the editor submits
-/// and restarts if the video comes back for rework, so QA's review queue is
-/// never charged to the editor. Total editor time is the sum of these spans.
-model WorkSession {
+/// Exists before the VideoSubmission does: the editor names the video and
+/// starts the clock, and only adds the record — with its duration — once the
+/// work is done. Survives revision rounds, accumulating spans each time.
+model WorkItem {
   id           String           @id @default(uuid())
   editorId     String
   editor       Editor           @relation(fields: [editorId], references: [id], onDelete: Cascade)
-  /// What the editor called the video when they started the clock. The
-  /// submission doesn't exist yet at that point — they add the video, with its
-  /// duration, once the work is finished.
-  label        String           @default("")
-  /// Filled in when the editor finally adds the video and picks this session.
-  /// Null while the work is still in progress or unlinked.
-  submissionId String?
-  submission   VideoSubmission? @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  startedAt    DateTime         @default(now())
-  /// Null while the timer is running. At most one open session per editor.
-  endedAt      DateTime?
-  /// True when the session was closed by the inactivity cap rather than by the
-  /// editor, so a forgotten timer can be spotted instead of silently scoring.
-  autoClosed   Boolean          @default(false)
+  /// What the editor called it when they started, e.g. "Rosabella #2".
+  label        String
+  /// Set when the editor finally adds the video and attaches this work.
+  /// Unique: one piece of tracked work belongs to at most one video.
+  submissionId String?          @unique
+  submission   VideoSubmission? @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+  status       WorkItemStatus   @default(working)
+  finishedAt   DateTime?
+  /// QA's sign-off that the logged time is honest. Only approved time feeds
+  /// the leaderboard — the clock is self-reported, so it needs a second pair
+  /// of eyes before it can move money.
+  timeApprovedAt DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  sessions     WorkSession[]
 
   @@index([editorId])
-  @@index([submissionId])
+  @@index([status])
+}
+
+/// A single unbroken span of the clock running on a WorkItem. Total editor
+/// time is the sum of these, so QA's review queue is never charged to them.
+model WorkSession {
+  id         String    @id @default(uuid())
+  workItemId String
+  workItem   WorkItem  @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+  startedAt  DateTime  @default(now())
+  /// Null while the timer is running. At most one open span per editor.
+  endedAt    DateTime?
+  /// True when closed by the cap rather than by the editor, so a forgotten
+  /// timer can be spotted instead of silently scoring.
+  autoClosed Boolean   @default(false)
+
+  @@index([workItemId])
 }
 
 /// Singleton row (id is always "singleton") holding admin-controlled app state, currently just the active batch counter.

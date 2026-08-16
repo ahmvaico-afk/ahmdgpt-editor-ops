@@ -18,9 +18,12 @@ import type { EditorSummary, Style, Submission } from "@/lib/types";
 export function DashboardClient({
   editorName,
   editorCode,
+  isQa = false,
 }: {
   editorName: string;
   editorCode: string;
+  /** Owner-granted QA hat — unlocks the review desk link. */
+  isQa?: boolean;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Submission | null>(null);
@@ -83,6 +86,14 @@ export function DashboardClient({
           )}
         </div>
         <div className="flex items-center gap-3">
+          {isQa && (
+            <Link
+              href={`/portal/${editorCode}/qa`}
+              className="rounded-full bg-gold/15 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-gold transition-colors hover:bg-gold/25"
+            >
+              QA Review
+            </Link>
+          )}
           <Link
             href={`/portal/${editorCode}/meters`}
             className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"

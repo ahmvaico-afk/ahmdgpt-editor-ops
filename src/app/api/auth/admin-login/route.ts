@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
     adminId: admin.id,
     loginCode: admin.loginCode,
     name: admin.name,
+    adminRole: admin.role === "qa" ? "qa" : "owner",
   });
 
   const response = NextResponse.json({ ok: true });

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdminSession } from "@/lib/auth";
+import { requireOwnerSession } from "@/lib/auth";
 import { checkInvoicePassword, createInvoiceUnlockToken, INVOICE_UNLOCK_COOKIE, invoiceUnlockCookieOptions } from "@/lib/invoice-auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
-  const session = await requireAdminSession();
+  const session = await requireOwnerSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { getSession, isQaEditor } from "@/lib/auth";
 import { PortalHeader } from "@/components/nav/portal-header";
 import { DashboardClient } from "@/components/portal/dashboard-client";
 
@@ -18,7 +18,11 @@ export default async function EditorDashboardPage({
   return (
     <div className="flex flex-1 flex-col">
       <PortalHeader editorCode={session.editorCode} />
-      <DashboardClient editorName={session.name} editorCode={session.editorCode} />
+      <DashboardClient
+        editorName={session.name}
+        editorCode={session.editorCode}
+        isQa={await isQaEditor()}
+      />
     </div>
   );
 }

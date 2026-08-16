@@ -7,21 +7,20 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-interface OpenSession {
+interface WorkItem {
   id: string;
   label: string;
-  startedAt: string;
-}
-
-export interface UnlinkedSession {
-  id: string;
-  label: string;
+  status: "working" | "submitted";
+  submissionId: string | null;
   minutes: number;
+  runningSince: string | null;
 }
 
-function elapsed(from: string, now: number): string {
-  const ms = Math.max(0, now - new Date(from).getTime());
-  const total = Math.floor(ms / 1000);
+function clock(minutes: number, runningSince: string | null, now: number): string {
+  const live = runningSince ? Math.max(0, now - new Date(runningSince).getTime()) : 0;
+  // `minutes` already includes the open span, so only the sub-minute remainder
+  // is added back — otherwise the running span would be counted twice.
+  const total = Math.floor((minutes * 60000 + (live % 60000)) / 1000);
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
@@ -30,38 +29,38 @@ function elapsed(from: string, now: number): string {
 }
 
 /**
- * Start/stop clock for the video an editor is working on right now.
+ * The editor's clock, across a video's whole life.
  *
- * The editor names the video here, before it exists as a submission — they add
- * it properly, with its duration, once the work is finished, and pick this
- * timing then. The clock stops at submit, never at approval, so QA's review
- * queue is not charged to the editor.
+ * Start -> Submitted -> (Resume for revisions -> Submitted)* -> Finish
+ *
+ * Finish is the only step that can't be undone from the portal, so it asks the
+ * editor to type the word out. Everything else is one tap.
  */
 export function WorkTimer() {
-  const { data, mutate } = useSWR<{ session: OpenSession | null; unlinked: UnlinkedSession[] }>(
-    "/api/work-sessions",
-    fetcher,
-    { refreshInterval: 30000 },
-  );
+  const { data, mutate } = useSWR<{ items: WorkItem[] }>("/api/work-items", fetcher, {
+    refreshInterval: 30000,
+  });
   const [label, setLabel] = useState("");
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [finishing, setFinishing] = useState<string | null>(null);
+  const [confirmText, setConfirmText] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  const open = data?.session ?? null;
-  const waiting = data?.unlinked ?? [];
+  const items = data?.items ?? [];
+  const running = items.find((i) => i.status === "working") ?? null;
 
-  // Ticks only while something is running, so an idle dashboard stays quiet.
   useEffect(() => {
-    if (!open) return;
+    if (!running) return;
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
-  }, [open]);
+  }, [running]);
 
   async function start() {
     if (!label.trim()) return;
     setBusy(true);
     try {
-      await fetch("/api/work-sessions", {
+      await fetch("/api/work-items", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ label: label.trim() }),
@@ -73,10 +72,22 @@ export function WorkTimer() {
     }
   }
 
-  async function stop() {
+  async function act(id: string, action: "submit" | "resume" | "finish", confirm?: string) {
     setBusy(true);
+    setError(null);
     try {
-      await fetch("/api/work-sessions", { method: "DELETE" });
+      const res = await fetch(`/api/work-items/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, ...(confirm ? { confirm } : {}) }),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        setError(json.error ?? "Could not update.");
+        return;
+      }
+      setFinishing(null);
+      setConfirmText("");
       await mutate();
     } finally {
       setBusy(false);
@@ -85,25 +96,99 @@ export function WorkTimer() {
 
   return (
     <div className="flex flex-col gap-2">
-      {open ? (
-        <Card className="flex flex-wrap items-center justify-between gap-3 border-accent/50 p-4">
-          <div className="min-w-0">
-            <p className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-accent">
-              <span className="status-dot" />
-              Working on
-            </p>
-            <p className="mt-0.5 truncate text-sm font-medium text-text">{open.label}</p>
+      {items.map((item) => (
+        <Card
+          key={item.id}
+          className={`flex flex-col gap-3 p-4 ${
+            item.status === "working" ? "border-accent/50" : ""
+          }`}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider">
+                {item.status === "working" ? (
+                  <>
+                    <span className="status-dot" />
+                    <span className="text-accent">Working on</span>
+                  </>
+                ) : (
+                  <span className="text-muted">With QA — resume if changes come back</span>
+                )}
+              </p>
+              <p className="mt-0.5 truncate text-sm font-medium text-text">{item.label}</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-xl tabular-nums text-text">
+                {clock(item.minutes, item.runningSince, now)}
+              </span>
+              {item.status === "working" ? (
+                <Button size="sm" disabled={busy} onClick={() => act(item.id, "submit")}>
+                  Submitted
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => act(item.id, "resume")}
+                  >
+                    Resume work
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    disabled={busy}
+                    onClick={() => {
+                      setFinishing(finishing === item.id ? null : item.id);
+                      setConfirmText("");
+                      setError(null);
+                    }}
+                  >
+                    Finish
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="font-mono text-xl tabular-nums text-text">
-              {elapsed(open.startedAt, now)}
-            </span>
-            <Button size="sm" variant="danger" disabled={busy} onClick={stop}>
-              Stop
-            </Button>
-          </div>
+
+          {finishing === item.id && (
+            <div className="flex flex-col gap-2 rounded-lg border border-accent/40 bg-accent/5 p-3">
+              <p className="text-xs text-text">
+                Finishing locks <span className="font-medium">{item.label}</span> — no more time
+                can be added and you can&rsquo;t resume it. Type <b>finish</b> to confirm.
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  autoFocus
+                  value={confirmText}
+                  onChange={(e) => setConfirmText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && confirmText.trim().toLowerCase() === "finish") {
+                      void act(item.id, "finish", confirmText);
+                    }
+                  }}
+                  placeholder="finish"
+                  className="!w-32"
+                />
+                <Button
+                  size="sm"
+                  variant="danger"
+                  disabled={busy || confirmText.trim().toLowerCase() !== "finish"}
+                  onClick={() => act(item.id, "finish", confirmText)}
+                >
+                  Finish for good
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setFinishing(null)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
-      ) : (
+      ))}
+
+      {!running && (
         <Card className="flex flex-wrap items-end gap-3 p-4">
           <div className="min-w-0 flex-1">
             <label className="mb-1.5 block font-mono text-[11px] uppercase tracking-wider text-muted">
@@ -125,12 +210,7 @@ export function WorkTimer() {
         </Card>
       )}
 
-      {waiting.length > 0 && (
-        <p className="px-1 font-mono text-[11px] text-muted">
-          {waiting.length} timed session{waiting.length === 1 ? "" : "s"} waiting to be attached —
-          pick one when you add the video.
-        </p>
-      )}
+      {error && <p className="px-1 text-xs text-accent">{error}</p>}
     </div>
   );
 }

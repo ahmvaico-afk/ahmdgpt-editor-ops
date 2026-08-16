@@ -3,9 +3,23 @@ import { SignJWT, jwtVerify } from "jose";
 export const SESSION_COOKIE = "ahmdgpt_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 14; // 14 days
 
+/**
+ * `admin` covers both the owner and QA. `adminRole` separates them: QA reviews
+ * work — revisions, approvals, sign-off on logged time — but never sees money.
+ * Older tokens issued before QA existed carry no adminRole, so anything reading
+ * it must treat a missing value as "owner".
+ */
+export type AdminRole = "owner" | "qa";
+
 export type SessionPayload =
   | { role: "editor"; editorId: string; editorCode: string; name: string }
-  | { role: "admin"; adminId: string; loginCode: string; name: string };
+  | {
+      role: "admin";
+      adminId: string;
+      loginCode: string;
+      name: string;
+      adminRole?: AdminRole;
+    };
 
 function getSecretKey() {
   const secret = process.env.SESSION_SECRET;

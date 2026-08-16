@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdminSession } from "@/lib/auth";
+import { requireOwnerSession } from "@/lib/auth";
 import { getCurrentBatch, setCurrentBatch } from "@/lib/batch";
 import { updateBatchSettingsSchema } from "@/lib/validation";
 
 export async function GET() {
-  const session = await requireAdminSession();
+  const session = await requireOwnerSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
@@ -30,7 +30,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
-  const session = await requireAdminSession();
+  const session = await requireOwnerSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }

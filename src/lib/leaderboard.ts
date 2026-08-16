@@ -136,7 +136,12 @@ async function computeLeaderboardRows(
       status: true,
       durationMinutes: true,
       revisions: { select: { severity: true, reason: true } },
-      workSessions: { select: { startedAt: true, endedAt: true } },
+      workItem: {
+        select: {
+          timeApprovedAt: true,
+          sessions: { select: { startedAt: true, endedAt: true } },
+        },
+      },
     },
   });
   const streaks = await getStreakMap();
@@ -173,10 +178,12 @@ async function computeLeaderboardRows(
     // video off entirely.
     entry.penalty += Math.min(videoPenalty, 100);
 
+    // Two gates before time can move a score: the video has to be approved,
+    // and QA has to have signed off the logged hours as honest.
     const settled = s.status === "approved" || s.status === "paid";
-    if (settled && s.workSessions.length > 0) {
+    if (settled && s.workItem?.timeApprovedAt) {
       let ms = 0;
-      for (const w of s.workSessions) {
+      for (const w of s.workItem.sessions) {
         if (!w.endedAt) continue;
         ms += Math.max(0, w.endedAt.getTime() - w.startedAt.getTime());
       }

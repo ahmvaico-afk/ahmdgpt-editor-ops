@@ -6,7 +6,15 @@ import { fetcher } from "@/lib/fetcher";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { formatDate } from "@/lib/date";
-import type { Submission } from "@/lib/types";
+
+/**
+ * Only what the modal actually needs. Kept narrow on purpose so QA can pass a
+ * queue row that carries no rates or payouts.
+ */
+export interface RevisionTarget {
+  id: string;
+  title: string;
+}
 
 // Duplicated rather than imported from lib/meters: that module pulls in the
 // Prisma client, which must not reach the browser bundle.
@@ -36,7 +44,7 @@ export function RevisionModal({
   onClose,
   onSaved,
 }: {
-  submission: Submission | null;
+  submission: RevisionTarget | null;
   onClose: () => void;
   onSaved: () => void;
 }) {

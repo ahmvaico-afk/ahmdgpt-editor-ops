@@ -98,7 +98,12 @@ export async function getEditorMeters(batchNumber?: number | null): Promise<Edit
       durationMinutes: true,
       calculatedPriceCents: true,
       revisions: { select: { severity: true, reason: true } },
-      workSessions: { select: { startedAt: true, endedAt: true } },
+      workItem: {
+        select: {
+          timeApprovedAt: true,
+          sessions: { select: { startedAt: true, endedAt: true } },
+        },
+      },
     },
   });
 
@@ -143,11 +148,15 @@ export async function getEditorMeters(batchNumber?: number | null): Promise<Edit
       penalty += Math.min(videoPenalty, 100);
       if (!hadEditorFault) cleanVideos += 1;
 
+      // Only time QA has signed off counts. The clock is self-reported, so it
+      // needs a second pair of eyes before it can move anyone up a leaderboard.
       let videoMs = 0;
-      for (const w of s.workSessions) {
-        const ms = sessionMs(w.startedAt, w.endedAt, now);
-        if (ms >= MAX_SESSION_HOURS * 3600_000) flagged += 1;
-        videoMs += ms;
+      if (s.workItem?.timeApprovedAt) {
+        for (const w of s.workItem.sessions) {
+          const ms = sessionMs(w.startedAt, w.endedAt, now);
+          if (ms >= MAX_SESSION_HOURS * 3600_000) flagged += 1;
+          videoMs += ms;
+        }
       }
       workedMs += videoMs;
 
@@ -185,10 +194,11 @@ export async function getEditorMeters(batchNumber?: number | null): Promise<Edit
   return rows;
 }
 
-/** The editor's currently running timer, if any. */
+/** The editor's currently running span, if any. */
 export async function getOpenSession(editorId: string) {
   return prisma.workSession.findFirst({
-    where: { editorId, endedAt: null },
+    where: { endedAt: null, workItem: { editorId } },
     orderBy: { startedAt: "desc" },
+    include: { workItem: { select: { id: true, label: true } } },
   });
 }

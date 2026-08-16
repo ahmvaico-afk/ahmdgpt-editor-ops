@@ -53,6 +53,8 @@ export interface AdminEditor {
   name: string;
   editorCode: string;
   active: boolean;
+  /// Promoted to QA by the owner — reviews everyone else's work, not their own.
+  isQa: boolean;
   createdAt: string;
   _count: { submissions: number };
 }

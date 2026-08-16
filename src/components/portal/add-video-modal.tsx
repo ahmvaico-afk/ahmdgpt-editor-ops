@@ -34,13 +34,19 @@ export function AddVideoModal({
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [sessionId, setSessionId] = useState("");
+  const [workItemId, setWorkItemId] = useState("");
 
-  // Timed spans the editor has already logged but not yet attached to a video.
+  // Timed work the editor has logged but not yet attached to a video.
   const { data: timing, mutate: mutateTiming } = useSWR<{
-    unlinked: { id: string; label: string; minutes: number }[];
-  }>(open ? "/api/work-sessions" : null, fetcher);
-  const unlinked = timing?.unlinked ?? [];
+    items: {
+      id: string;
+      label: string;
+      minutes: number;
+      submissionId: string | null;
+      status: string;
+    }[];
+  }>(open ? "/api/work-items" : null, fetcher);
+  const unlinked = (timing?.items ?? []).filter((i) => !i.submissionId);
 
   const selectedStyle = styles.find((s) => s.id === styleId) ?? null;
 
@@ -73,7 +79,7 @@ export function AddVideoModal({
     setDurationSec("");
     setRate("");
     setNotes("");
-    setSessionId("");
+    setWorkItemId("");
     setError(null);
   }
 
@@ -98,7 +104,7 @@ export function AddVideoModal({
           durationMinutes: parsedDuration,
           // Attaches the time already logged against this video, if the editor
           // ran the clock while working on it.
-          ...(sessionId ? { workSessionId: sessionId } : {}),
+          ...(workItemId ? { workItemId } : {}),
           ...(selectedStyle.isCustomPricing
             ? { customRatePerMinuteDollars: parseFloat(rate) }
             : {}),
@@ -232,7 +238,7 @@ export function AddVideoModal({
         {unlinked.length > 0 && (
           <div>
             <Label>Time logged for this video</Label>
-            <Select value={sessionId} onChange={(e) => setSessionId(e.target.value)}>
+            <Select value={workItemId} onChange={(e) => setWorkItemId(e.target.value)}>
               <option value="">Don&rsquo;t attach any time</option>
               {unlinked.map((u) => (
                 <option key={u.id} value={u.id}>

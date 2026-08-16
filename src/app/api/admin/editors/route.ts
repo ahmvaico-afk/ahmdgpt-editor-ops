@@ -1,26 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { requireAdminSession } from "@/lib/auth";
+import { requireOwnerSession } from "@/lib/auth";
 import { createEditorSchema } from "@/lib/validation";
 import { generateEditorCode } from "@/lib/editor-code";
 
 export async function GET() {
-  const session = await requireAdminSession();
+  const session = await requireOwnerSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
+  // Explicit select, not include: `include` returns every scalar on Editor,
+  // which put the bcrypt pinHash on the wire.
   const editors = await prisma.editor.findMany({
     orderBy: { createdAt: "asc" },
-    include: { _count: { select: { submissions: true } } },
+    select: {
+      id: true,
+      name: true,
+      editorCode: true,
+      active: true,
+      isQa: true,
+      createdAt: true,
+      _count: { select: { submissions: true } },
+    },
   });
 
   return NextResponse.json({ editors });
 }
 
 export async function POST(request: NextRequest) {
-  const session = await requireAdminSession();
+  const session = await requireOwnerSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }

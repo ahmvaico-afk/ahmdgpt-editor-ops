@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, requireEditorSession } from "@/lib/auth";
+import { getSession, isQaEditor, requireEditorSession } from "@/lib/auth";
 import { updateSubmissionSchema } from "@/lib/validation";
 import { calculatePriceCents } from "@/lib/pricing";
 import type { Prisma } from "@/generated/prisma/client";
@@ -28,20 +28,42 @@ export async function PATCH(
   }
 
   if (session.role === "editor") {
-    if (existing.editorId !== session.editorId) {
-      return NextResponse.json({ error: "Not found." }, { status: 404 });
-    }
-    if (existing.status !== "submitted") {
-      return NextResponse.json(
-        { error: "Only videos still in 'submitted' status can be edited." },
-        { status: 400 }
-      );
-    }
-    if (data.status !== undefined) {
-      return NextResponse.json(
-        { error: "Editors can't change submission status." },
-        { status: 403 }
-      );
+    // A QA editor reviewing somebody else's video may set its status, and
+    // nothing else. Their own videos fall through to the normal editor rules,
+    // so the QA hat can never be used to approve their own work.
+    const reviewingSomeoneElse =
+      existing.editorId !== session.editorId && (await isQaEditor());
+
+    if (reviewingSomeoneElse) {
+      const onlyStatus =
+        data.status !== undefined &&
+        data.title === undefined &&
+        data.clientOrProject === undefined &&
+        data.videoLink === undefined &&
+        data.notes === undefined &&
+        data.durationMinutes === undefined;
+      if (!onlyStatus) {
+        return NextResponse.json(
+          { error: "QA can change a video's status, not its details." },
+          { status: 403 },
+        );
+      }
+    } else {
+      if (existing.editorId !== session.editorId) {
+        return NextResponse.json({ error: "Not found." }, { status: 404 });
+      }
+      if (existing.status !== "submitted") {
+        return NextResponse.json(
+          { error: "Only videos still in 'submitted' status can be edited." },
+          { status: 400 }
+        );
+      }
+      if (data.status !== undefined) {
+        return NextResponse.json(
+          { error: "Editors can't change submission status." },
+          { status: 403 }
+        );
+      }
     }
   }
 

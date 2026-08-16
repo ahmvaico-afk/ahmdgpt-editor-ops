@@ -125,12 +125,12 @@ export async function POST(request: NextRequest) {
   });
 
   // Attach the time the editor logged before this record existed. Matched on
-  // editorId and "not already linked" as well as the id, so a session can't be
-  // stolen from another editor or re-used across two videos.
-  if (data.workSessionId) {
-    await prisma.workSession.updateMany({
+  // editorId and "not already linked" as well as the id, so tracked work can't
+  // be stolen from another editor or re-used across two videos.
+  if (data.workItemId) {
+    await prisma.workItem.updateMany({
       where: {
-        id: data.workSessionId,
+        id: data.workItemId,
         editorId: session.editorId,
         submissionId: null,
       },

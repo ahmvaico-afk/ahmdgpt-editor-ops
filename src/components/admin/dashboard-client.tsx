@@ -11,7 +11,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { SummaryCards } from "@/components/admin/summary-cards";
 import { BatchManager } from "@/components/admin/batch-manager";
 import { EditSubmissionModal } from "@/components/edit-submission-modal";
-import { RevisionModal } from "@/components/admin/revision-modal";
+import { RevisionModal, type RevisionTarget } from "@/components/admin/revision-modal";
 import { formatDuration } from "@/lib/duration";
 import { formatDate } from "@/lib/date";
 import type { AdminEditor, BatchInfo, Style, Submission, SubmissionStatus } from "@/lib/types";
@@ -25,7 +25,7 @@ export function AdminDashboardClient() {
   const [selectedBatch, setSelectedBatch] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [editTarget, setEditTarget] = useState<Submission | null>(null);
-  const [revisionTarget, setRevisionTarget] = useState<Submission | null>(null);
+  const [revisionTarget, setRevisionTarget] = useState<RevisionTarget | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
 
   const { data: editorsData } = useSWR<{ editors: AdminEditor[] }>(

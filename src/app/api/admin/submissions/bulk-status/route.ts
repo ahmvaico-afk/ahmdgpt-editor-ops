@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdminSession } from "@/lib/auth";
+import { requireOwnerSession } from "@/lib/auth";
 import type { Prisma } from "@/generated/prisma/client";
 import type { SubmissionStatus } from "@/lib/types";
 
@@ -13,7 +13,7 @@ const FROM_STATUS: Partial<Record<SubmissionStatus, SubmissionStatus>> = {
 };
 
 export async function POST(request: NextRequest) {
-  const session = await requireAdminSession();
+  const session = await requireOwnerSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }

@@ -57,6 +57,20 @@ export function EditorsClient() {
     mutate();
   }
 
+  async function toggleQa(editor: AdminEditor) {
+    const next = !editor.isQa;
+    const message = next
+      ? `Make ${editor.name} QA? They'll be able to log revisions, approve videos and sign off logged time for everyone except themselves.`
+      : `Remove QA from ${editor.name}?`;
+    if (!confirm(message)) return;
+    await fetch(`/api/admin/editors/${editor.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isQa: next }),
+    });
+    mutate();
+  }
+
   async function deleteEditor(editor: AdminEditor) {
     const submissionNote =
       editor._count.submissions > 0
@@ -130,6 +144,18 @@ export function EditorsClient() {
                 Reset PIN
               </button>
             )}
+
+            <button
+              onClick={() => toggleQa(editor)}
+              title={editor.isQa ? "Remove QA" : "Make QA"}
+              className={`rounded-full px-2 py-0.5 font-mono text-[11px] uppercase tracking-wider transition-colors ${
+                editor.isQa
+                  ? "bg-gold/15 text-gold"
+                  : "text-muted-2 hover:text-muted"
+              }`}
+            >
+              {editor.isQa ? "QA" : "Make QA"}
+            </button>
 
             <button
               onClick={() => toggleActive(editor)}

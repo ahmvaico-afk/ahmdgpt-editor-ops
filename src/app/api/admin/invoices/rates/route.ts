@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdminSession } from "@/lib/auth";
+import { requireOwnerSession } from "@/lib/auth";
 import { hasInvoiceUnlock } from "@/lib/invoice-auth";
 
 export async function GET() {
-  const session = await requireAdminSession();
+  const session = await requireOwnerSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }

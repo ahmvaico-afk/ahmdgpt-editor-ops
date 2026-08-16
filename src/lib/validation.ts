@@ -18,8 +18,8 @@ export const createSubmissionSchema = z.object({
   durationMinutes: z.number().positive().max(10000),
   customRatePerMinuteDollars: z.number().nonnegative().max(100000).optional(),
   notes: z.string().trim().max(2000).optional().or(z.literal("")),
-  /// Optional: a timed span the editor logged before this record existed.
-  workSessionId: z.string().min(1).max(64).optional(),
+  /// Optional: timed work the editor logged before this record existed.
+  workItemId: z.string().min(1).max(64).optional(),
 });
 
 export const updateSubmissionSchema = z.object({
@@ -56,6 +56,8 @@ export const updateEditorSchema = z.object({
   active: z.boolean().optional(),
   pin: z.string().trim().min(4).max(6).regex(/^\d+$/).optional(),
   name: z.string().trim().min(1).max(120).optional(),
+  /// Owner-only: promotes this editor to QA, or takes the hat away.
+  isQa: z.boolean().optional(),
 });
 
 export const updateBatchSettingsSchema = z.object({
@@ -87,10 +89,20 @@ export const invoiceUnlockSchema = z.object({
  * lib/hook/spec.ts is the single authority on shape and bounds, so validating
  * it twice would just be two places to keep in sync.
  */
-export const startWorkSessionSchema = z.object({
+export const startWorkItemSchema = z.object({
   /// What the editor calls the video they're starting, e.g. "Rosabella #2".
   /// Not a submission id — that record doesn't exist until the work is done.
   label: z.string().trim().min(1).max(120),
+});
+
+export const workItemActionSchema = z.object({
+  action: z.enum(["submit", "resume", "finish"]),
+  /// Required for "finish": the literal word, typed out.
+  confirm: z.string().trim().max(20).optional(),
+});
+
+export const approveWorkTimeSchema = z.object({
+  approved: z.boolean(),
 });
 
 export const createRevisionSchema = z.object({
