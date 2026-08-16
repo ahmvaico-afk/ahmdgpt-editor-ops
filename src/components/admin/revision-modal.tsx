@@ -48,7 +48,7 @@ export function RevisionModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [severity, setSeverity] = useState(1);
+  const [counts, setCounts] = useState({ minor: 0, moderate: 0, major: 0 });
   const [reason, setReason] = useState<"editor_error" | "brief_change">("editor_error");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -60,19 +60,24 @@ export function RevisionModal({
 
   if (!submission) return null;
   const revisions = data?.revisions ?? [];
+  const total = counts.minor + counts.moderate + counts.major;
+
+  function bump(key: keyof typeof counts, by: number) {
+    setCounts((c) => ({ ...c, [key]: Math.max(0, Math.min(50, c[key] + by)) }));
+  }
 
   async function add() {
-    if (!submission) return;
+    if (!submission || total === 0) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/admin/submissions/${submission.id}/revisions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ severity, reason, note: note.trim() || undefined }),
+        body: JSON.stringify({ counts, reason, note: note.trim() || undefined }),
       });
       if (res.ok) {
         setNote("");
-        setSeverity(1);
+        setCounts({ minor: 0, moderate: 0, major: 0 });
         await mutate();
         onSaved();
       }
@@ -113,21 +118,51 @@ export function RevisionModal({
         </div>
 
         <div className="mt-5 flex flex-col gap-4">
-          <div>
-            <Label>How bad</Label>
-            <div className="flex flex-wrap gap-1.5">
-              {[1, 2, 3].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSeverity(s)}
-                  className={`rounded-md px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider transition-colors ${
-                    severity === s ? "bg-accent text-bg" : "bg-surface-2 text-muted hover:text-text"
-                  }`}
-                >
-                  {SEVERITY_LABELS[s]}
-                </button>
-              ))}
-            </div>
+          <div className="flex flex-col gap-2">
+            <Label>How many of each</Label>
+            {(
+              [
+                { key: "minor", label: "Minor", cost: 6 },
+                { key: "moderate", label: "Moderate", cost: 15 },
+                { key: "major", label: "Major", cost: 30 },
+              ] as const
+            ).map((row) => (
+              <div
+                key={row.key}
+                className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-2 px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <p className="font-mono text-[11px] uppercase tracking-wider text-text">
+                    {row.label}
+                  </p>
+                  <p className="font-mono text-[10px] text-muted-2">
+                    {reason === "editor_error" ? `−${row.cost}% each` : "no cost"}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    aria-label={`One less ${row.label}`}
+                    disabled={counts[row.key] === 0}
+                    onClick={() => bump(row.key, -1)}
+                    className="h-8 w-8 rounded-md bg-surface font-mono text-base text-muted transition-colors hover:text-text disabled:opacity-30"
+                  >
+                    −
+                  </button>
+                  <span className="w-6 text-center font-mono text-base tabular-nums text-text">
+                    {counts[row.key]}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={`One more ${row.label}`}
+                    onClick={() => bump(row.key, 1)}
+                    className="h-8 w-8 rounded-md bg-accent font-mono text-base text-bg transition-colors hover:bg-accent-light"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
 
           <div>
@@ -171,8 +206,12 @@ export function RevisionModal({
             />
           </div>
 
-          <Button disabled={busy} onClick={add}>
-            {busy ? "Saving…" : "Log revision"}
+          <Button disabled={busy || total === 0} onClick={add}>
+            {busy
+              ? "Saving…"
+              : total === 0
+                ? "Count the revisions above"
+                : `Log ${total} revision${total === 1 ? "" : "s"}`}
           </Button>
         </div>
 
@@ -181,6 +220,20 @@ export function RevisionModal({
             <h3 className="font-mono text-[11px] uppercase tracking-wider text-muted">
               Already logged ({revisions.length})
             </h3>
+            {/* A running total, so QA can see the damage without counting rows. */}
+            <p className="mt-1 font-mono text-[11px] text-muted-2">
+              {[1, 2, 3]
+                .map((s) => ({
+                  label: SEVERITY_LABELS[s].toLowerCase(),
+                  n: revisions.filter((r) => r.severity === s && r.reason === "editor_error")
+                    .length,
+                }))
+                .filter((x) => x.n > 0)
+                .map((x) => `${x.n} ${x.label}`)
+                .join(" · ") || "none against the editor"}
+              {revisions.some((r) => r.reason === "brief_change") &&
+                ` · ${revisions.filter((r) => r.reason === "brief_change").length} brief change (free)`}
+            </p>
             <div className="mt-2 divide-y divide-border rounded-lg border border-border">
               {revisions.map((r) => (
                 <div key={r.id} className="flex items-center justify-between gap-3 p-3">

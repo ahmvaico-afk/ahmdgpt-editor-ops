@@ -105,11 +105,23 @@ export const approveWorkTimeSchema = z.object({
   approved: z.boolean(),
 });
 
-export const createRevisionSchema = z.object({
-  severity: z.number().int().min(1).max(3),
-  reason: z.enum(["editor_error", "brief_change"]),
-  note: z.string().trim().max(400).optional(),
-});
+/**
+ * QA logs a whole round at once — "3 minor and 1 major" — rather than filling
+ * the form in three times. Counts, not a single severity.
+ */
+export const createRevisionSchema = z
+  .object({
+    counts: z.object({
+      minor: z.number().int().min(0).max(50),
+      moderate: z.number().int().min(0).max(50),
+      major: z.number().int().min(0).max(50),
+    }),
+    reason: z.enum(["editor_error", "brief_change"]),
+    note: z.string().trim().max(400).optional(),
+  })
+  .refine((d) => d.counts.minor + d.counts.moderate + d.counts.major > 0, {
+    message: "Count at least one revision.",
+  });
 
 export const createHookPresetSchema = z.object({
   name: z.string().trim().min(1).max(60),

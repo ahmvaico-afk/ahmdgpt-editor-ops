@@ -37,15 +37,22 @@ export async function POST(
     return NextResponse.json({ error: SELF_REVIEW }, { status: 403 });
   }
 
-  const revision = await prisma.revision.create({
-    data: {
-      submissionId: submission.id,
-      severity: parsed.data.severity,
-      reason: parsed.data.reason,
-      note: parsed.data.note || null,
-    },
-  });
-  return NextResponse.json({ revision }, { status: 201 });
+  // One row per revision, so severity still scores individually and any single
+  // one can be removed later if QA over-counted.
+  const { counts, reason, note } = parsed.data;
+  const rows = [
+    ...Array<number>(counts.minor).fill(1),
+    ...Array<number>(counts.moderate).fill(2),
+    ...Array<number>(counts.major).fill(3),
+  ].map((severity) => ({
+    submissionId: submission.id,
+    severity,
+    reason,
+    note: note || null,
+  }));
+
+  await prisma.revision.createMany({ data: rows });
+  return NextResponse.json({ created: rows.length }, { status: 201 });
 }
 
 export async function GET(
