@@ -26,13 +26,6 @@ export const metadata: Metadata = {
   description: "Editor submission and payout tracking for AHMD.GPT",
 };
 
-/**
- * Adobe Fonts kit id, for Proxima Nova in the hook tool. Commercial font, so it
- * can't be committed — it is served by Adobe under the owner's own Creative
- * Cloud licence. Unset means the option simply isn't offered.
- */
-const adobeKitId = process.env.NEXT_PUBLIC_ADOBE_FONTS_KIT_ID?.trim();
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -43,11 +36,6 @@ export default function RootLayout({
       lang="en"
       className={`${syne.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      {adobeKitId && (
-        <head>
-          <link rel="stylesheet" href={`https://use.typekit.net/${adobeKitId}.css`} />
-        </head>
-      )}
       <body className="min-h-full flex flex-col bg-bg text-text font-sans relative">
         <GrainOverlay />
         {children}

@@ -8,6 +8,7 @@
  * that needs them.
  */
 import { Inter, JetBrains_Mono, Montserrat, Syne } from "next/font/google";
+import localFont from "next/font/local";
 import type { HookFontKey } from "./spec";
 
 const hookSans = Inter({
@@ -40,21 +41,24 @@ const hookGeometric = Montserrat({
 });
 
 /**
- * Proxima Nova itself, served by Adobe Fonts under the owner's own Creative
- * Cloud licence. Set ADOBE_FONTS_KIT_ID (see .env.example) and the stylesheet is
- * linked in the root layout; leave it unset and the option stays hidden rather
- * than silently falling back to a different typeface mid-export.
+ * Proxima Nova, from the owner's own licensed copy committed under src/fonts.
+ * Only the Semibold cut is on hand, so 600 is the single weight offered —
+ * declaring weights we don't have a file for would just make the browser
+ * synthesise a fake bold, which looks wrong and measures differently.
  *
- * "proxima-nova" is the family name Adobe's kit CSS registers.
+ * Drop further cuts in the same folder and add them to `src` to widen it.
  */
-export const PROXIMA_FAMILY = "proxima-nova";
+const hookProxima = localFont({
+  src: [{ path: "../../fonts/ProximaNova-Semibold.ttf", weight: "600", style: "normal" }],
+  display: "block",
+});
 
 export const HOOK_FONT_FAMILIES: Record<HookFontKey, string> = {
   sans: hookSans.style.fontFamily,
   display: hookDisplay.style.fontFamily,
   mono: hookMono.style.fontFamily,
   geometric: hookGeometric.style.fontFamily,
-  proxima: `${PROXIMA_FAMILY}, ${hookGeometric.style.fontFamily}`,
+  proxima: hookProxima.style.fontFamily,
 };
 
 /** Weights each face actually ships, so the UI can't offer one that isn't loaded. */
@@ -63,8 +67,7 @@ export const HOOK_FONT_WEIGHTS: Record<HookFontKey, number[]> = {
   display: [600, 700, 800],
   mono: [400, 500, 700, 800],
   geometric: [500, 600, 700, 800, 900],
-  // Adobe's Proxima Nova kit is normally built with these four.
-  proxima: [400, 600, 700, 800],
+  proxima: [600],
 };
 
 /** Nearest available weight for a face, for when the editor switches fonts. */

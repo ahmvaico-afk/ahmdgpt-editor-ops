@@ -119,7 +119,7 @@ export const SAMPLE_HOOK_TEXT = "She almost died from something her doctor never
 
 export const HOOK_FONT_LABELS: Record<HookFontKey, string> = {
   sans: "Inter — house hook font",
-  proxima: "Proxima Nova — licensed",
+  proxima: "Proxima Nova Semibold",
   geometric: "Montserrat — Proxima-style",
   display: "Syne — brand display",
   mono: "JetBrains Mono — brand mono",
