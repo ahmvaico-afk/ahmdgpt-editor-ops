@@ -425,6 +425,19 @@ export function HookToolClient() {
                 onChange={(v) => set("fontWeight", Number(v))}
               />
             </Field>
+            <Field label="Extra bold">
+              <Segmented
+                options={[
+                  { value: "0", label: "None" },
+                  { value: "1", label: "1×" },
+                  { value: "2", label: "2×" },
+                  { value: "3", label: "3×" },
+                  { value: "4", label: "4×" },
+                ]}
+                value={String(config.boldness)}
+                onChange={(v) => set("boldness", Number(v))}
+              />
+            </Field>
             <Slider
               label="Size"
               value={config.fontSize}

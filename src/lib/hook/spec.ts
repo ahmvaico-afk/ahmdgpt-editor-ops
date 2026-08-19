@@ -38,6 +38,13 @@ export interface HookConfig {
   lineHeight: number;
   textColor: string;
   textCase: HookTextCase;
+  /**
+   * Extra weight on top of whatever the font file provides, 0 (none) to 4.
+   * Thickens the strokes rather than swapping to a heavier cut — the point is
+   * that a face we only hold one weight of, like Proxima Nova Semibold, can
+   * still be pushed heavier without a fake bold from the browser.
+   */
+  boldness: number;
 
   pillMode: HookPillMode;
   pillColor: string;
@@ -88,6 +95,7 @@ export const HOUSE_STYLE: HookConfig = {
   // As typed. The reference hooks are in caps, but that's a per-hook call the
   // editor makes with the Caps control — not something to force on every line.
   textCase: "none",
+  boldness: 0,
 
   pillMode: "line",
   pillColor: "#ffffff",
@@ -136,6 +144,7 @@ export const HOOK_LIMITS = {
   pillPadY: { min: 0, max: 160 },
   pillOpacity: { min: 0, max: 1 },
   strokeWidth: { min: 0, max: 24 },
+  boldness: { min: 0, max: 4 },
   shadowBlur: { min: 0, max: 80 },
   shadowOffsetY: { min: -60, max: 60 },
   offsetPct: { min: 0, max: 0.9 },
@@ -206,6 +215,7 @@ export function normalizeConfig(input: unknown): HookConfig {
     lineHeight: num(raw.lineHeight, d.lineHeight, L.lineHeight.min, L.lineHeight.max),
     textColor: colour(raw.textColor, d.textColor),
     textCase,
+    boldness: Math.round(num(raw.boldness, d.boldness, L.boldness.min, L.boldness.max)),
 
     pillMode,
     pillColor: colour(raw.pillColor, d.pillColor),

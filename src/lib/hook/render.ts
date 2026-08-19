@@ -206,9 +206,17 @@ export function renderHook(
    * enough for all three that measuring per-face isn't worth the reflow.
    */
   const capHeight = config.fontSize * 0.73;
-  const pillHeight = capHeight + padY * 2;
 
-  const blockWidth = maxWidth + padX * 2;
+  /**
+   * Extra weight, drawn as a stroke in the text's own colour so the glyphs
+   * fatten evenly. Scaled off font size so a given step looks the same at any
+   * size. The stroke straddles the outline, half of it landing outside the
+   * glyph, so the plate has to grow by the full width to avoid clipping.
+   */
+  const boldWidth = config.boldness * config.fontSize * 0.025;
+
+  const pillHeight = capHeight + padY * 2 + boldWidth;
+  const blockWidth = maxWidth + padX * 2 + boldWidth;
   const blockHeight = (lines.length - 1) * lineHeight + pillHeight;
 
   const blockX =
@@ -246,7 +254,7 @@ export function renderHook(
       ctx.fill();
     } else {
       lines.forEach((line, i) => {
-        const w = line.width + padX * 2;
+        const w = line.width + padX * 2 + boldWidth;
         const x =
           config.align === "left"
             ? blockX
@@ -261,8 +269,9 @@ export function renderHook(
   }
 
   // Sits the first line's caps exactly `padY` below the plate's top edge, which
-  // is what makes the padding symmetric on every line.
-  const firstBaseline = blockY + padY + capHeight;
+  // is what makes the padding symmetric on every line. Half the bold stroke
+  // sits above the cap line, so the baseline drops by that much too.
+  const firstBaseline = blockY + padY + capHeight + boldWidth / 2;
 
   const gaps = spacingMap(text, config);
   const spaceWidth = ctx.measureText(" ").width;
@@ -295,11 +304,20 @@ export function renderHook(
       }
 
       if (!hasPill) applyShadow();
+      ctx.lineJoin = "round";
+      ctx.miterLimit = 2;
+
+      // Outline first, widened to clear the bold stroke so it still reads as a
+      // border around the fattened glyph rather than being swallowed by it.
       if (config.strokeWidth > 0) {
-        ctx.lineJoin = "round";
-        ctx.miterLimit = 2;
         ctx.strokeStyle = config.strokeColor;
-        ctx.lineWidth = config.strokeWidth * 2;
+        ctx.lineWidth = config.strokeWidth * 2 + boldWidth;
+        ctx.strokeText(atom.text, x, baseline);
+      }
+      // Then the weight itself, in the text's own colour.
+      if (boldWidth > 0) {
+        ctx.strokeStyle = config.textColor;
+        ctx.lineWidth = boldWidth;
         ctx.strokeText(atom.text, x, baseline);
       }
       ctx.fillStyle = config.textColor;
