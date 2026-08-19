@@ -34,6 +34,18 @@ interface Preset {
   config: HookConfig;
 }
 
+/**
+ * Proxima Nova is only offered when an Adobe Fonts kit is configured — it's a
+ * commercial face served under the owner's licence. Without the kit the option
+ * is hidden rather than silently substituting a different typeface, which would
+ * quietly change every export's line breaks.
+ */
+const PROXIMA_AVAILABLE = Boolean(process.env.NEXT_PUBLIC_ADOBE_FONTS_KIT_ID);
+
+const AVAILABLE_FONTS = (Object.keys(HOOK_FONT_LABELS) as HookFontKey[]).filter(
+  (k) => k !== "proxima" || PROXIMA_AVAILABLE,
+);
+
 type Panel = "text" | "plate" | "position";
 
 export function HookToolClient() {
@@ -406,7 +418,7 @@ export function HookToolClient() {
                   });
                 }}
               >
-                {(Object.keys(HOOK_FONT_LABELS) as HookFontKey[]).map((k) => (
+                {AVAILABLE_FONTS.map((k) => (
                   <option key={k} value={k}>
                     {HOOK_FONT_LABELS[k]}
                   </option>

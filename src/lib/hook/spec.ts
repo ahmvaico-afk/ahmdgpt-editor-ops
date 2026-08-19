@@ -12,7 +12,7 @@
 export const HOOK_W = 1080;
 export const HOOK_H = 1920;
 
-export type HookFontKey = "sans" | "display" | "mono";
+export type HookFontKey = "sans" | "display" | "mono" | "geometric" | "proxima";
 export type HookAlign = "left" | "center" | "right";
 export type HookAnchor = "top" | "middle" | "bottom";
 /**
@@ -119,6 +119,8 @@ export const SAMPLE_HOOK_TEXT = "She almost died from something her doctor never
 
 export const HOOK_FONT_LABELS: Record<HookFontKey, string> = {
   sans: "Inter — house hook font",
+  proxima: "Proxima Nova — licensed",
+  geometric: "Montserrat — Proxima-style",
   display: "Syne — brand display",
   mono: "JetBrains Mono — brand mono",
 };
@@ -169,10 +171,10 @@ export function normalizeConfig(input: unknown): HookConfig {
   const num = (v: unknown, fallback: number, min: number, max: number) =>
     clamp(typeof v === "number" ? v : Number(v ?? fallback), min, max);
 
-  const fontKey: HookFontKey =
-    raw.fontKey === "display" || raw.fontKey === "mono" || raw.fontKey === "sans"
-      ? raw.fontKey
-      : d.fontKey;
+  const FONT_KEYS: HookFontKey[] = ["sans", "display", "mono", "geometric", "proxima"];
+  const fontKey: HookFontKey = FONT_KEYS.includes(raw.fontKey as HookFontKey)
+    ? (raw.fontKey as HookFontKey)
+    : d.fontKey;
   const pillMode: HookPillMode =
     raw.pillMode === "line" || raw.pillMode === "none" || raw.pillMode === "block"
       ? raw.pillMode
