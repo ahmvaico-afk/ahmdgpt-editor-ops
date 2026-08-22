@@ -89,6 +89,38 @@ export const invoiceUnlockSchema = z.object({
  * lib/hook/spec.ts is the single authority on shape and bounds, so validating
  * it twice would just be two places to keep in sync.
  */
+/** The word an applicant is asked to type, proving they read the question. */
+export const ATTENTION_WORD = "reel";
+
+export const HOURS_BANDS = ["under5", "5to8", "8to10", "10plus"] as const;
+
+/**
+ * Public form — anyone on the internet can post to it, so every field is
+ * bounded and the whole thing is rate limited by IP at the route.
+ */
+export const applicantSchema = z.object({
+  name: z.string().trim().min(2).max(80),
+  whatsapp: z.string().trim().min(7).max(30),
+  city: z.string().trim().max(80).optional().or(z.literal("")),
+
+  hasAiAdsExperience: z.boolean(),
+  portfolio: z.string().trim().max(600).optional().or(z.literal("")),
+  software: z.string().trim().min(2).max(200),
+  aiTools: z.string().trim().max(200).optional().or(z.literal("")),
+
+  ownsComputer: z.boolean(),
+  computerSpecs: z.string().trim().max(300).optional().or(z.literal("")),
+  ownsPhone: z.boolean(),
+
+  hoursPerDay: z.enum(HOURS_BANDS),
+  handlesFeedback: z.boolean(),
+  turnaround: z.string().trim().max(80).optional().or(z.literal("")),
+  expectedPayPkr: z.string().trim().max(60).optional().or(z.literal("")),
+  whyYou: z.string().trim().max(1000).optional().or(z.literal("")),
+
+  attentionAnswer: z.string().trim().max(40),
+});
+
 export const startWorkItemSchema = z.object({
   /// What the editor calls the video they're starting, e.g. "Rosabella #2".
   /// Not a submission id — that record doesn't exist until the work is done.

@@ -6,8 +6,10 @@ export async function proxy(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   const session = token ? await verifySessionToken(token) : null;
 
+  // Every admin page that isn't the login itself. Pages also guard themselves,
+  // but keeping this list current means an unauthenticated hit never renders.
   const adminMatch = pathname.match(
-    /^\/admin\/(dashboard|styles|editors|reel|totals|invoices|leaderboard)/
+    /^\/admin\/(dashboard|styles|editors|reel|totals|invoices|leaderboard|meters|work-time|covers|applicants)/
   );
   if (adminMatch) {
     if (!session || session.role !== "admin") {

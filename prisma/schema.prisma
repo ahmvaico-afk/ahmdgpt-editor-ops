@@ -21,6 +21,49 @@ enum RevisionReason {
   brief_change
 }
 
+enum ApplicantStatus {
+  new
+  shortlisted
+  rejected
+}
+
+/// An editor applying through the public /apply page shared on stories.
+/// Deliberately not linked to Editor — most of these never become one.
+model Applicant {
+  id       String @id @default(uuid())
+  name     String
+  whatsapp String
+  city     String?
+
+  /// Has actually cut AI UGC ads before, as opposed to general video work.
+  hasAiAdsExperience Boolean
+  portfolio          String?
+  software           String
+  aiTools            String?
+
+  ownsComputer  Boolean
+  computerSpecs String?
+  ownsPhone     Boolean
+
+  /// Banded rather than free text so the answers are comparable.
+  hoursPerDay     String
+  handlesFeedback Boolean
+  turnaround      String?
+  expectedPayPkr  String?
+  whyYou          String?
+
+  /// Answer to the "type this word" check. Anyone who skims past it is
+  /// filtered without a human having to read their application.
+  attentionAnswer String
+  attentionPassed Boolean @default(false)
+
+  status    ApplicantStatus @default(new)
+  createdAt DateTime        @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}
+
 /// Where a piece of work has got to.
 ///   working   - the clock is running
 ///   submitted - handed to QA; the clock is stopped but can be resumed if the
