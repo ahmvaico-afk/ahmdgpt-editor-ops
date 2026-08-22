@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
   const applicants = await prisma.applicant.findMany({
     where,
-    orderBy: [{ checksPassed: "desc" }, { createdAt: "desc" }],
+    orderBy: [{ attentionPassed: "desc" }, { createdAt: "desc" }],
     take: 300,
   });
 

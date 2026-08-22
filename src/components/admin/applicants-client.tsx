@@ -22,18 +22,14 @@ interface Applicant {
   hoursPerDay: string;
   handlesFeedback: boolean;
   turnaround: string | null;
-  expectedPayPkr: string | null;
   whyYou: string | null;
   attentionPassed: boolean;
-  checksPassed: number;
   secondsTaken: number;
   autoFiltered: boolean;
   filterReason: string | null;
   status: "new" | "shortlisted" | "rejected";
   createdAt: string;
 }
-
-const CHECKS_TOTAL = 4;
 
 const HOURS_LABELS: Record<string, string> = {
   under5: "Under 5h/day",
@@ -125,15 +121,6 @@ export function ApplicantsClient() {
                         {p.filterReason}
                       </span>
                     )}
-                    <span
-                      className={`rounded-full px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider ${
-                        p.checksPassed === CHECKS_TOTAL
-                          ? "bg-green/15 text-green"
-                          : "bg-warning/15 text-warning"
-                      }`}
-                    >
-                      {p.checksPassed}/{CHECKS_TOTAL} checks
-                    </span>
                     {p.hasAiAdsExperience && (
                       <span className="rounded-full bg-green/15 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-green">
                         AI ads
@@ -172,7 +159,6 @@ export function ApplicantsClient() {
                   <Row label="Phone">{p.ownsPhone ? "Yes" : "No"}</Row>
                   <Row label="Feedback">{p.handlesFeedback ? "Says yes" : "Says no"}</Row>
                   {p.turnaround && <Row label="Turnaround">{p.turnaround}</Row>}
-                  {p.expectedPayPkr && <Row label="Expects">{p.expectedPayPkr}</Row>}
                   {p.whyYou && (
                     <Row label="Why them">
                       <span className="whitespace-pre-wrap">{p.whyYou}</span>

@@ -112,13 +112,9 @@ export const applicantSchema = z.object({
   hoursPerDay: z.enum(HOURS_BANDS),
   handlesFeedback: z.boolean(),
   turnaround: z.string().trim().max(80).optional().or(z.literal("")),
-  expectedPayPkr: z.string().trim().max(60).optional().or(z.literal("")),
   whyYou: z.string().trim().max(1000).optional().or(z.literal("")),
 
   attentionAnswer: z.string().trim().max(40),
-  mathAnswer: z.string().trim().max(20),
-  hoursAnswer: z.string().trim().max(20),
-  scenarioAnswer: z.string().trim().max(20),
   /// Client-reported, so treated as a hint rather than proof — it only ever
   /// moves someone into the filtered pile, never out of it.
   secondsTaken: z.number().int().min(0).max(86400).optional(),

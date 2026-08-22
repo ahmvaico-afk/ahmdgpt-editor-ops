@@ -38,9 +38,6 @@ export async function POST(request: NextRequest) {
   // clean, but an otherwise decent applicant is never silently lost.
   const screen = screenApplicant({
     attentionAnswer: d.attentionAnswer,
-    mathAnswer: d.mathAnswer,
-    hoursAnswer: d.hoursAnswer,
-    scenarioAnswer: d.scenarioAnswer,
     secondsTaken: d.secondsTaken ?? 0,
     ownsComputer: d.ownsComputer,
   });
@@ -60,15 +57,10 @@ export async function POST(request: NextRequest) {
       hoursPerDay: d.hoursPerDay,
       handlesFeedback: d.handlesFeedback,
       turnaround: d.turnaround || null,
-      expectedPayPkr: d.expectedPayPkr || null,
       whyYou: d.whyYou || null,
       attentionAnswer: d.attentionAnswer,
-      mathAnswer: d.mathAnswer,
-      hoursAnswer: d.hoursAnswer,
-      scenarioAnswer: d.scenarioAnswer,
       secondsTaken: d.secondsTaken ?? 0,
       attentionPassed: screen.attentionPassed,
-      checksPassed: screen.checksPassed,
       autoFiltered: screen.autoFiltered,
       filterReason: screen.filterReason,
     },

@@ -49,17 +49,21 @@ model Applicant {
   hoursPerDay     String
   handlesFeedback Boolean
   turnaround      String?
-  expectedPayPkr  String?
   whyYou          String?
 
-  /// Screening answers. Three of these are trivial for anyone actually reading
-  /// and impossible for someone tabbing through, which is the whole point.
+  /// The one screening question: type a given word back. Trivial for anyone
+  /// reading, impossible for someone tabbing through.
   attentionAnswer String
-  mathAnswer      String
-  hoursAnswer     String
-  scenarioAnswer  String
   attentionPassed Boolean @default(false)
-  checksPassed    Int     @default(0)
+
+  /// Retired questions — the form no longer asks these, but applications that
+  /// came in while it did still hold real answers, so the columns stay.
+  /// New rows just take the defaults.
+  mathAnswer     String  @default("")
+  hoursAnswer    String  @default("")
+  scenarioAnswer String  @default("")
+  checksPassed   Int     @default(0)
+  expectedPayPkr String?
   /// How long they spent on the form. Under half a minute means they didn't
   /// read a word of it.
   secondsTaken    Int     @default(0)
