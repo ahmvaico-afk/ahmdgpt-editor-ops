@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { ATTENTION_WORD, applicantSchema } from "@/lib/validation";
+import { screenApplicant } from "@/lib/screening";
+import { applicantSchema } from "@/lib/validation";
 
 /**
  * The one public write endpoint in the app — the hiring form gets shared on a
@@ -32,9 +33,17 @@ export async function POST(request: NextRequest) {
   }
   const d = parsed.data;
 
-  // Scored, not enforced: a wrong answer still saves, flagged, so the owner can
-  // see who skimmed rather than silently losing an otherwise decent applicant.
-  const attentionPassed = d.attentionAnswer.trim().toLowerCase() === ATTENTION_WORD;
+  // Scored server-side, never trusted from the client. Nothing is rejected
+  // outright — failures are sorted into their own pile so the main list stays
+  // clean, but an otherwise decent applicant is never silently lost.
+  const screen = screenApplicant({
+    attentionAnswer: d.attentionAnswer,
+    mathAnswer: d.mathAnswer,
+    hoursAnswer: d.hoursAnswer,
+    scenarioAnswer: d.scenarioAnswer,
+    secondsTaken: d.secondsTaken ?? 0,
+    ownsComputer: d.ownsComputer,
+  });
 
   await prisma.applicant.create({
     data: {
@@ -54,7 +63,14 @@ export async function POST(request: NextRequest) {
       expectedPayPkr: d.expectedPayPkr || null,
       whyYou: d.whyYou || null,
       attentionAnswer: d.attentionAnswer,
-      attentionPassed,
+      mathAnswer: d.mathAnswer,
+      hoursAnswer: d.hoursAnswer,
+      scenarioAnswer: d.scenarioAnswer,
+      secondsTaken: d.secondsTaken ?? 0,
+      attentionPassed: screen.attentionPassed,
+      checksPassed: screen.checksPassed,
+      autoFiltered: screen.autoFiltered,
+      filterReason: screen.filterReason,
     },
   });
 

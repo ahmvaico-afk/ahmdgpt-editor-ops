@@ -25,9 +25,15 @@ interface Applicant {
   expectedPayPkr: string | null;
   whyYou: string | null;
   attentionPassed: boolean;
+  checksPassed: number;
+  secondsTaken: number;
+  autoFiltered: boolean;
+  filterReason: string | null;
   status: "new" | "shortlisted" | "rejected";
   createdAt: string;
 }
+
+const CHECKS_TOTAL = 4;
 
 const HOURS_LABELS: Record<string, string> = {
   under5: "Under 5h/day",
@@ -37,14 +43,15 @@ const HOURS_LABELS: Record<string, string> = {
 };
 
 const TABS = [
-  { value: "", label: "All" },
   { value: "new", label: "New" },
   { value: "shortlisted", label: "Shortlisted" },
   { value: "rejected", label: "Rejected" },
+  { value: "", label: "All worth reading" },
+  { value: "filtered", label: "Filtered out" },
 ] as const;
 
 export function ApplicantsClient() {
-  const [tab, setTab] = useState("new");
+  const [tab, setTab] = useState<string>("new");
   const [open, setOpen] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -113,11 +120,20 @@ export function ApplicantsClient() {
                 <div className="min-w-0">
                   <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-text">
                     {p.name}
-                    {!p.attentionPassed && (
+                    {p.filterReason && (
                       <span className="rounded-full bg-accent/15 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-accent">
-                        failed check
+                        {p.filterReason}
                       </span>
                     )}
+                    <span
+                      className={`rounded-full px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider ${
+                        p.checksPassed === CHECKS_TOTAL
+                          ? "bg-green/15 text-green"
+                          : "bg-warning/15 text-warning"
+                      }`}
+                    >
+                      {p.checksPassed}/{CHECKS_TOTAL} checks
+                    </span>
                     {p.hasAiAdsExperience && (
                       <span className="rounded-full bg-green/15 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-green">
                         AI ads
@@ -131,8 +147,9 @@ export function ApplicantsClient() {
                   </p>
                   <p className="mt-0.5 font-mono text-xs text-muted">
                     {p.whatsapp}
-                    {p.city ? ` · ${p.city}` : ""} · {HOURS_LABELS[p.hoursPerDay] ?? p.hoursPerDay}{" "}
-                    · {formatDate(p.createdAt)}
+                    {p.city ? ` · ${p.city}` : ""} · {HOURS_LABELS[p.hoursPerDay] ?? p.hoursPerDay}
+                    {p.secondsTaken > 0 && ` · took ${p.secondsTaken}s`} ·{" "}
+                    {formatDate(p.createdAt)}
                   </p>
                 </div>
                 <span className="font-mono text-[11px] uppercase tracking-wider text-muted-2">

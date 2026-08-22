@@ -52,15 +52,28 @@ model Applicant {
   expectedPayPkr  String?
   whyYou          String?
 
-  /// Answer to the "type this word" check. Anyone who skims past it is
-  /// filtered without a human having to read their application.
+  /// Screening answers. Three of these are trivial for anyone actually reading
+  /// and impossible for someone tabbing through, which is the whole point.
   attentionAnswer String
+  mathAnswer      String
+  hoursAnswer     String
+  scenarioAnswer  String
   attentionPassed Boolean @default(false)
+  checksPassed    Int     @default(0)
+  /// How long they spent on the form. Under half a minute means they didn't
+  /// read a word of it.
+  secondsTaken    Int     @default(0)
+
+  /// Sorted out of the main pile automatically — see `screenApplicant`.
+  /// `filterReason` is the plain-English why, shown to the owner.
+  autoFiltered Boolean @default(false)
+  filterReason String?
 
   status    ApplicantStatus @default(new)
   createdAt DateTime        @default(now())
 
   @@index([status])
+  @@index([autoFiltered])
   @@index([createdAt])
 }
 

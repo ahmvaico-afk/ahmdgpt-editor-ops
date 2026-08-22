@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { EyeLogo } from "@/components/eye-logo";
-import { ATTENTION_WORD, HOURS_BANDS } from "@/lib/validation";
+import { ATTENTION_WORD, MATH_A, MATH_B, SCENARIO_OPTIONS } from "@/lib/screening";
+import { HOURS_BANDS } from "@/lib/validation";
 
 type Answers = {
   name: string;
@@ -21,6 +22,9 @@ type Answers = {
   expectedPayPkr: string;
   whyYou: string;
   attentionAnswer: string;
+  mathAnswer: string;
+  hoursAnswer: string;
+  scenarioAnswer: string;
 };
 
 const EMPTY: Answers = {
@@ -40,6 +44,9 @@ const EMPTY: Answers = {
   expectedPayPkr: "",
   whyYou: "",
   attentionAnswer: "",
+  mathAnswer: "",
+  hoursAnswer: "",
+  scenarioAnswer: "",
 };
 
 const HOURS_LABELS: Record<(typeof HOURS_BANDS)[number], string> = {
@@ -50,7 +57,7 @@ const HOURS_LABELS: Record<(typeof HOURS_BANDS)[number], string> = {
 };
 
 /** Steps exist so a phone shows a few questions at a time, not a wall of them. */
-const STEPS = ["You", "Experience", "Setup", "Commitment", "Last bit"] as const;
+const STEPS = ["You", "Experience", "Setup", "Commitment", "Quick check", "Last bit"] as const;
 
 export function ApplyClient() {
   const [booted, setBooted] = useState(false);
@@ -60,6 +67,9 @@ export function ApplyClient() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  /** Set when they hit Start, so we know how long the form actually took. */
+  const startedAt = useRef<number | null>(null);
 
   // Matches the CRT animation length in globals.css.
   useEffect(() => {
@@ -93,7 +103,16 @@ export function ApplyClient() {
       case 3:
         return a.hoursPerDay !== "" && a.handlesFeedback !== null;
       case 4:
-        return a.whyYou.trim().length >= 20 && a.attentionAnswer.trim().length > 0;
+        // Only that they answered — whether they answered *correctly* is
+        // scored server-side, so nobody gets to retry until it goes green.
+        return (
+          a.mathAnswer.trim().length > 0 &&
+          a.hoursAnswer.trim().length > 0 &&
+          a.scenarioAnswer !== "" &&
+          a.attentionAnswer.trim().length > 0
+        );
+      case 5:
+        return a.whyYou.trim().length >= 20;
       default:
         return false;
     }
@@ -112,6 +131,9 @@ export function ApplyClient() {
           ownsComputer: Boolean(a.ownsComputer),
           ownsPhone: Boolean(a.ownsPhone),
           handlesFeedback: Boolean(a.handlesFeedback),
+          secondsTaken: startedAt.current
+            ? Math.round((Date.now() - startedAt.current) / 1000)
+            : 0,
         }),
       });
       if (!res.ok) {
@@ -150,7 +172,10 @@ export function ApplyClient() {
               minutes — answer honestly, we check.
             </p>
             <button
-              onClick={() => setStarted(true)}
+              onClick={() => {
+                startedAt.current = Date.now();
+                setStarted(true);
+              }}
               className="mt-2 w-full max-w-xs rounded-full bg-accent px-8 py-4 font-mono text-sm uppercase tracking-widest text-bg transition-colors hover:bg-accent-light"
             >
               Start
@@ -313,6 +338,50 @@ export function ApplyClient() {
 
         {step === 4 && (
           <>
+            <p className="rounded-lg border border-border bg-surface-2 p-3 text-xs leading-relaxed text-muted">
+              Four quick ones. They take ten seconds if you&rsquo;re reading, and we do check
+              the answers.
+            </p>
+            <Q label={`Type the word "${ATTENTION_WORD}" below`}>
+              <TextInput
+                value={a.attentionAnswer}
+                onChange={(v) => set("attentionAnswer", v)}
+                placeholder="Your answer"
+              />
+            </Q>
+            <Q label={`What is ${MATH_A} + ${MATH_B}?`}>
+              <TextInput
+                value={a.mathAnswer}
+                onChange={(v) => set("mathAnswer", v)}
+                placeholder="Your answer"
+                inputMode="tel"
+              />
+            </Q>
+            <Q label={`How many hours are in two days?`}>
+              <TextInput
+                value={a.hoursAnswer}
+                onChange={(v) => set("hoursAnswer", v)}
+                placeholder="Your answer"
+                inputMode="tel"
+              />
+            </Q>
+            <Q label="A client rejects your video for the third time. What do you do?">
+              <div className="flex flex-col gap-2">
+                {SCENARIO_OPTIONS.map((o) => (
+                  <Choice
+                    key={o.value}
+                    label={o.label}
+                    selected={a.scenarioAnswer === o.value}
+                    onClick={() => set("scenarioAnswer", o.value)}
+                  />
+                ))}
+              </div>
+            </Q>
+          </>
+        )}
+
+        {step === 5 && (
+          <>
             <Q label="What do you expect to be paid per video?" optional hint="In PKR. A range is fine.">
               <TextInput
                 value={a.expectedPayPkr}
@@ -333,13 +402,6 @@ export function ApplyClient() {
               <p className="mt-1 text-right font-mono text-[10px] text-muted-2">
                 {a.whyYou.trim().length} / 20 min
               </p>
-            </Q>
-            <Q label={`Type the word "${ATTENTION_WORD}" below`} hint="Just checking you're reading.">
-              <TextInput
-                value={a.attentionAnswer}
-                onChange={(v) => set("attentionAnswer", v)}
-                placeholder={ATTENTION_WORD}
-              />
             </Q>
           </>
         )}

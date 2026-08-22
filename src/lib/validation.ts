@@ -89,9 +89,6 @@ export const invoiceUnlockSchema = z.object({
  * lib/hook/spec.ts is the single authority on shape and bounds, so validating
  * it twice would just be two places to keep in sync.
  */
-/** The word an applicant is asked to type, proving they read the question. */
-export const ATTENTION_WORD = "reel";
-
 export const HOURS_BANDS = ["under5", "5to8", "8to10", "10plus"] as const;
 
 /**
@@ -119,6 +116,12 @@ export const applicantSchema = z.object({
   whyYou: z.string().trim().max(1000).optional().or(z.literal("")),
 
   attentionAnswer: z.string().trim().max(40),
+  mathAnswer: z.string().trim().max(20),
+  hoursAnswer: z.string().trim().max(20),
+  scenarioAnswer: z.string().trim().max(20),
+  /// Client-reported, so treated as a hint rather than proof — it only ever
+  /// moves someone into the filtered pile, never out of it.
+  secondsTaken: z.number().int().min(0).max(86400).optional(),
 });
 
 export const startWorkItemSchema = z.object({
