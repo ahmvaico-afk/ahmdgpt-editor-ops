@@ -27,9 +27,17 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Static tools built into public/tools/* — any logged-in editor or the admin.
+  if (pathname.startsWith("/tools/")) {
+    if (!session) {
+      return new NextResponse("Please log in to the AHMD.GPT portal first.", { status: 401 });
+    }
+    return NextResponse.next();
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/portal/:path*"],
+  matcher: ["/admin/:path*", "/portal/:path*", "/tools/:path*"],
 };

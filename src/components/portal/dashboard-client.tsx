@@ -107,6 +107,12 @@ export function DashboardClient({
             Hook Text
           </Link>
           <Link
+            href={`/portal/${editorCode}/news-text`}
+            className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
+          >
+            News Text
+          </Link>
+          <Link
             href={`/portal/${editorCode}/leaderboard`}
             className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
           >
