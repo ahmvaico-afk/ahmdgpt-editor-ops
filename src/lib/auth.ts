@@ -62,6 +62,21 @@ export async function requireReviewerSession(): Promise<
   return { reviewerEditorId: session.editorId };
 }
 
+/**
+ * An active editor the owner has promoted to QA — and nobody else, not even
+ * the admin. Read from the database so revoking QA locks them out at once.
+ */
+export async function requireQaEditorSession() {
+  const session = await getSession();
+  if (!session || session.role !== "editor") return null;
+  const editor = await prisma.editor.findUnique({
+    where: { id: session.editorId },
+    select: { isQa: true, active: true },
+  });
+  if (!editor?.isQa || !editor.active) return null;
+  return session;
+}
+
 /** Whether the signed-in editor currently wears the QA hat. */
 export async function isQaEditor(): Promise<boolean> {
   const session = await getSession();

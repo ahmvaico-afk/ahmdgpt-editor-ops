@@ -94,6 +94,14 @@ export function DashboardClient({
               QA Review
             </Link>
           )}
+          {isQa && (
+            <Link
+              href={`/portal/${editorCode}/swipe-lab`}
+              className="rounded-full bg-gold/15 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-gold transition-colors hover:bg-gold/25"
+            >
+              Swipe Lab
+            </Link>
+          )}
           <Link
             href={`/portal/${editorCode}/meters`}
             className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"

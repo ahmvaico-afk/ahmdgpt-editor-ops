@@ -18,7 +18,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const portalMatch = pathname.match(/^\/portal\/([^/]+)\/(dashboard|invoice|leaderboard)/);
+  const portalMatch = pathname.match(/^\/portal\/([^/]+)\/(dashboard|invoice|leaderboard|swipe-lab)/);
   if (portalMatch) {
     const editorCode = decodeURIComponent(portalMatch[1]).toLowerCase();
     if (!session || session.role !== "editor" || session.editorCode !== editorCode) {

@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sperm Worms Swipe Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a working swipe file — summary strip, filter bar, ranked card grid, and a side drawer that turns any card into a remake prompt. */
+:root{
+  --bg:#eef0ea;
+  --surface:#ffffff;
+  --ink:#16201d;
+  --muted:#5d6862;
+  --line:#d6dbd2;
+  --accent:#f2c230;      /* sour pineapple */
+  --accent-ink:#2a2105;
+  --green:#1f7a52;
+  --red:#b8412c;
+  --chip:#e3e7df;
+  --shadow:0 1px 2px rgba(22,32,29,.06),0 8px 24px rgba(22,32,29,.06);
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121614;--surface:#1b201e;--ink:#e9ede7;--muted:#9aa59f;--line:#2e3532;--accent:#f2c230;--accent-ink:#2a2105;--green:#58c08f;--red:#e7836f;--chip:#262d2a;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121614;--surface:#1b201e;--ink:#e9ede7;--muted:#9aa59f;--line:#2e3532;--accent:#f2c230;--accent-ink:#2a2105;--green:#58c08f;--red:#e7836f;--chip:#262d2a;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;margin:0}
+.wrap{max-width:1320px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(28px,4vw,44px);font-weight:800;line-height:1.05}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+button,select,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:28px;align-items:end;margin-bottom:22px}
+.top p{margin:10px 0 0;color:var(--muted);max-width:62ch}
+.stats{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px;min-width:120px}
+.stat b{display:block;font-family:var(--display);font-size:26px;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat span{font-size:12px;color:var(--muted)}
+@media (max-width:820px){.top{grid-template-columns:1fr}.stats{justify-content:flex-start}}
+
+.lessons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:22px}
+.lesson{background:var(--surface);padding:14px 16px;min-width:0}
+.lesson h3{font-size:15px;font-weight:700;margin-bottom:4px}
+.lesson p{margin:0;font-size:13.5px;color:var(--muted)}
+@media (max-width:980px){.lessons{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.lessons{grid-template-columns:1fr}}
+
+.bar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-bottom:16px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px}
+.seg{display:inline-flex;background:var(--chip);border-radius:999px;padding:3px}
+.seg button{border:0;background:transparent;padding:6px 12px;border-radius:999px;cursor:pointer;font-size:13.5px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08);font-weight:600}
+.toggle{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);cursor:pointer}
+.toggle input{accent-color:var(--green);width:16px;height:16px}
+.bar .count{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;text-align:left;padding:0;transition:transform .15s ease,box-shadow .15s ease}
+.card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.thumb{position:relative;aspect-ratio:4/5;background:var(--chip);overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.rank{position:absolute;top:10px;left:10px;background:var(--ink);color:var(--bg);font-family:var(--display);font-weight:800;font-size:15px;border-radius:8px;padding:2px 9px;font-variant-numeric:tabular-nums}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.pill.live{background:var(--green);color:#fff}
+.pill.off{background:var(--chip);color:var(--muted)}
+.pill.fmt{background:rgba(0,0,0,.62);color:#fff}
+.thumb .tags{position:absolute;top:10px;right:10px;display:flex;gap:6px}
+.thumb .made{position:absolute;bottom:10px;left:10px;background:var(--accent);color:var(--accent-ink)}
+.cbody{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px;flex:1}
+.brand{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.card h3{font-size:17px;font-weight:700;line-height:1.2}
+.meta{display:flex;gap:12px;font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.meta b{color:var(--ink);font-weight:500}
+.fit{font-size:12.5px;color:var(--green);font-weight:600}
+.flag{font-size:12.5px;color:var(--red);font-weight:600}
+
+.scrim{position:fixed;inset:0;background:rgba(10,14,12,.45);z-index:20}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(980px,100%);background:var(--surface);z-index:21;display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);box-shadow:-12px 0 40px rgba(0,0,0,.2);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.dleft{background:var(--chip);overflow:auto;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.dleft img{width:100%;border-radius:8px;display:block;box-shadow:var(--shadow)}
+.variants{display:flex;gap:8px;flex-wrap:wrap}
+.variants button{border:2px solid transparent;border-radius:6px;padding:0;background:none;cursor:pointer;width:64px;overflow:hidden}
+.variants button[aria-pressed="true"]{border-color:var(--accent)}
+.variants img{box-shadow:none;border-radius:4px}
+.dleft .hint{font-size:12.5px;color:var(--muted)}
+.dright{overflow:auto;padding:22px 24px 40px;display:flex;flex-direction:column;gap:18px;min-width:0}
+.dhead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.dhead h2{font-size:26px;font-weight:800;line-height:1.1}
+.close{border:1px solid var(--line);background:var(--surface);border-radius:8px;width:36px;height:36px;cursor:pointer;flex:none;font-size:18px;line-height:1}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.facts div{background:var(--surface);padding:8px 10px;min-width:0}
+.facts span{display:block;font-size:11px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em}
+.facts b{font-family:var(--display);font-size:18px;font-variant-numeric:tabular-nums}
+.sec h4{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;font-weight:500}
+.sec p{margin:0}
+.links{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px}
+.links a{color:var(--ink)}
+.make{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:14px 18px;font-family:var(--display);font-weight:800;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
+.make:hover{filter:brightness(.96)}
+.builder{border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.step{background:var(--chip);border-radius:8px;padding:10px 12px;font-size:13.5px}
+.step b{display:block;font-family:var(--display);font-size:15px}
+.tip{font-size:12.5px;color:var(--muted);margin:0}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--muted);flex:1;min-width:180px}
+label.f input,label.f textarea,label.f select{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--ink);font-size:14px;width:100%}
+label.f textarea{resize:vertical;min-height:110px;font-family:var(--body)}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opts button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 10px;font-size:12.5px;cursor:pointer;text-align:left}
+.opts button:hover{border-color:var(--accent)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13.5px}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.modehint{font-size:12.5px;color:var(--muted);margin:-6px 0 0}
+.out{width:100%;min-height:320px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;font-family:var(--mono);font-size:12.5px;line-height:1.55;color:var(--ink);resize:vertical}
+.copyrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.copy{background:var(--ink);color:var(--bg);border:0;border-radius:8px;padding:10px 16px;font-weight:600;cursor:pointer}
+.ghost{background:transparent;border:1px solid var(--line);border-radius:8px;padding:9px 14px;cursor:pointer}
+.toast{font-size:13px;color:var(--green);font-weight:600}
+@media (max-width:860px){
+  .drawer{grid-template-columns:1fr;overflow:auto;display:block}
+  .dleft,.dright{overflow:visible}
+  .dleft img.main{max-height:60vh;object-fit:contain}
+  .facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .steps{grid-template-columns:1fr}
+}
+.empty{padding:40px;text-align:center;color:var(--muted);grid-column:1/-1}
+.foot{margin-top:28px;font-size:12.5px;color:var(--muted);max-width:90ch}
+@media (prefers-reduced-motion:reduce){.card{transition:none}.card:hover{transform:none}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Competitor winners · Meta Ad Library · pulled 17 Oct 2026</div>
+      <h1>Sperm Worms Swipe Lab</h1>
+      <p>The longest-running ads from Lumeo and Primal Storm (including the pages they hide behind), ranked. Open any ad and hit <b>Make it for me</b> to get a ready-to-paste remake prompt: Image 1 is the ad, Image 2 is our pouch.</p>
+    </div>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <section class="lessons" aria-label="What the winners have in common">
+    <div class="lesson"><h3>One image, many headlines</h3><p>Lumeo ran the same car-selfie photo with 4 headlines across 3 pages for two months. The picture wins; headlines are the cheap test.</p></div>
+    <div class="lesson"><h3>Mascots and memes last longest</h3><p>Primal Storm’s cartoon jar ads have been live 157 days. Absurd, brand-safe, never fatigued. Same tone that wins for us.</p></div>
+    <div class="lesson"><h3>Comparison sells volume</h3><p>Drops vs. overflowing glass, dribble vs. rope. It’s the same idea as our #1 ad, Empty Glass vs Full Splash.</p></div>
+    <div class="lesson"><h3>What got them banned</h3><p>Fake press mastheads, nudity, and explicit fluid shots. About a quarter of Lumeo’s ads were removed. The prompts swap only those parts out.</p></div>
+  </section>
+
+  <div class="bar" role="toolbar" aria-label="Filters">
+    <div class="seg" id="fBrand" aria-label="Brand">
+      <button aria-pressed="true" data-v="all">All brands</button>
+      <button aria-pressed="false" data-v="Lumeo">Lumeo</button>
+      <button aria-pressed="false" data-v="Primal Storm">Primal Storm</button>
+    </div>
+    <div class="seg" id="fFmt" aria-label="Format">
+      <button aria-pressed="true" data-v="all">All</button>
+      <button aria-pressed="false" data-v="Static">Statics</button>
+      <button aria-pressed="false" data-v="Video">Videos</button>
+    </div>
+    <label class="toggle"><input type="checkbox" id="fLive"> Still live</label>
+    <label class="toggle"><input type="checkbox" id="fFit"> Fits what wins for us</label>
+    <span class="count" id="count"></span>
+  </div>
+
+  <main class="grid" id="grid"></main>
+
+  <p class="foot"><b>How the rank works.</b> Score = days the ad ran + 8 per extra copy of the creative + 6 per extra headline/size variant + 20 if it is still live today. Meta doesn’t publish sales, so runtime and duplication are the best public signals that an ad makes money. Most Lumeo ads stopped on 14–16 Sep because Meta took their pages down, not because the ads stopped working; they relaunched on a new page on 23 Sep. Images are copies of the public Ad Library creatives for reference; use “Open in Ad Library” to see the live ad and its full caption.</p>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="dTitle">
+  <div class="dleft">
+    <img class="main" id="dImg" alt="">
+    <div class="variants" id="dVars"></div>
+    <div class="hint">Screenshot this exact image (or save it) and attach it as <b>Image 1</b>. If there are variants, pick the one you screenshot: the prompt describes that one.</div>
+  </div>
+  <div class="dright">
+    <div class="dhead">
+      <div>
+        <div class="brand" id="dBrand"></div>
+        <h2 id="dTitle"></h2>
+      </div>
+      <button class="close" id="dClose" aria-label="Close">✕</button>
+    </div>
+    <div class="facts" id="dFacts"></div>
+    <div class="sec"><h4>Why it wins</h4><p id="dWhy"></p></div>
+    <div class="sec" id="dFitSec"><h4>How it fits us</h4><p id="dFit"></p></div>
+    <div class="sec" id="dFlagSec"><h4>Don’t copy</h4><p id="dFlag" style="color:var(--red)"></p></div>
+    <div class="sec"><h4>Ads</h4><div class="links" id="dLinks"></div></div>
+
+    <button class="make" id="dMake">Make it for me</button>
+
+    <div class="builder" id="builder" hidden>
+      <div class="steps">
+        <div class="step"><b>Image 1 · master reference</b>Screenshot of this ad (left).</div>
+        <div class="step"><b>Image 2 · our product</b>The Sperm Worms pouch PNG.</div>
+      </div>
+      <p class="tip">Works best in tools that edit an uploaded image (ChatGPT images, Gemini / Nano Banana, Higgsfield). Upload Image 1 first, then Image 2, then paste the prompt.</p>
+      <div class="tabs" id="bTabs">
+        <button aria-pressed="true" data-v="copy">Copy this ad</button>
+        <button aria-pressed="false" data-v="twist">New twist</button>
+        <button aria-pressed="false" data-v="video" id="bVidTab">Video brief</button>
+      </div>
+      <p class="modehint" id="bModeHint"></p>
+      <div class="row">
+        <label class="f">Size
+          <select id="bRatio">
+            <option value="1:1">1:1 feed (1080×1080)</option>
+            <option value="4:5">4:5 feed (1080×1350)</option>
+            <option value="9:16">9:16 stories/reels (1080×1920)</option>
+          </select>
+        </label>
+      </div>
+      <label class="f">Headline
+        <input id="bHead" type="text">
+      </label>
+      <div class="opts" id="bHeadOpts" aria-label="Headline options"></div>
+      <label class="f">Line under the headline (optional)
+        <input id="bSub" type="text">
+      </label>
+      <label class="f">Other text on the image, one per line. Start a line with [where it goes]; only the words after the brackets appear in the image.
+        <textarea id="bCall"></textarea>
+      </label>
+      <textarea class="out" id="bOut" readonly aria-label="Generated prompt"></textarea>
+      <div class="copyrow">
+        <button class="copy" id="bCopy">Copy prompt</button>
+        <button class="ghost" id="bMade">Mark as made</button>
+        <span class="toast" id="bToast" aria-live="polite"></span>
+      </div>
+      <p class="tip" id="bMadeNote"></p>
+    </div>
+  </div>
+</aside>
+
+<script>
+/* Each ad:
+   scene  = literal description of Image 1 (used by Faithful copy)
+   fix    = the only changes Faithful copy makes besides product, text and faces
+   swaps  = creative changes for New twist
+   callouts = "[where] text" lines; only the text after the brackets is rendered
+   imgs[i] may override scene / ratio / headline / callouts / fix for that variant */
+const ADS = [
+/* ---------------- LUMEO ---------------- */
+{key:"car-selfie",brand:"Lumeo",title:"Car-seat reaction selfie",format:"Static",ratio:"1:1",person:true,
+ imgs:[{id:"1056241787090175",label:"She accused me of hyperspermia",headline:"SHE ASKED WHAT I’VE BEEN EATING…"},{id:"28074984215418254",label:"6FT ROPES (or your money back)",headline:"BIGGER LOADS",sub:"(or your money back)"},{id:"1055103423868953",label:"5 years of dribbles gone in 3 weeks",headline:"5 YEARS OF DRIBBLES GONE IN 2 WEEKS"},{id:"27453837950945270",label:"Ropes. Not drops.",headline:"REAL MEN SHOOT ROPES. NOT DROPS."}],
+ pages:"Men’s Health, Lumeo",start:"20 Jul",end:"16 Sep",days:59,versions:6,live:false,
+ why:"A shocked reaction face, the product in her hand, and four hand-drawn arrow callouts. They kept the photo and tested four different headlines on three pages for about two months: the picture is the winner, the headline is the variable.",
+ fit:"Built for our best persona, the Bigger-loads reaction chaser (29% hit rate).",fitTag:true,
+ flag:"The fluid all over her face and hair. That’s what gets Lumeo ads removed.",
+ scene:"Square photo. The top fifth is a solid black band holding a two-line headline in heavy white condensed sans-serif capitals (in some versions one phrase is orange). Below it: a phone selfie taken from slightly above of a young woman with long platinum-blonde hair, sitting in the front passenger seat of a car with dark red leather seats, parked in a sunny car park with other cars visible through the windows behind her. She stares into the camera wide-eyed with her mouth open in shock. She wears a dark brown halter crop top and denim shorts and holds the product pouch low in front of her stomach with one hand, label facing camera, filling the lower centre. Four short white captions in a casual hand-written style sit around her, each with a curved hand-drawn white arrow pointing at her: one upper-left, one middle-left, one middle-right, one lower-right.",
+ fix:["In Image 1 her face and hair are covered in a glittery liquid mess. Remove all of it and instead stick a few small yellow sour pineapple gummy worms in her hair and one on her cheek. Her face, expression and everything else stay the same."],
+ swaps:["Replace the woman with a new, fictional adult woman in the same car seat, same selfie angle and the same wide-eyed, open-mouthed shock.","Instead of the mess on her face, gummy worms have exploded out of the pouch all over the car: on the dashboard, the seat and her lap.","She holds the Sperm Worms pouch from Image 2 exactly where the reference shows its pouch, label facing camera."],
+ headlines:["BIGGER LOADS. NOT DROPS.","SHE ASKED WHAT I’VE BEEN EATING…","5 YEARS OF DRIBBLES GONE IN 2 WEEKS","BIGGER LOADS"],
+ sub:"",callouts:["[Upper-left caption with arrow] Bigger loads by week 2","[Middle-left caption with arrow] 4 sour pineapple gummies a day","[Middle-right caption with arrow] Boost your boys","[Lower-right caption with arrow] Zinc + L-carnitine","[Small line under the lower-right caption] (30-day money-back)"]},
+
+{key:"swallow-promise",brand:"Lumeo",title:"She’ll swallow, we promise",format:"Static",ratio:"1:1",person:false,
+ imgs:[{id:"1306056730997057"}],pages:"Lumeo",start:"17 May",end:"16 Jul",days:61,versions:8,live:false,
+ why:"Two hand-drawn emoji faces do the before/after with no models and nothing for Meta to flag. Pure taste angle, readable in one second. Duplicated eight times.",
+ fit:"Taste is our highest hit-rate angle (33%), and we have only made three taste concepts.",fitTag:true,
+ scene:"Square, plain white background. Top centre: a wide orange rounded-rectangle badge containing a two-line headline in bold white rounded sans-serif (first line heavier than the second). Middle: two large circular faces drawn with rough brush strokes, side by side. The left face is dark grey: eyes squeezed shut like > <, tongue sticking out in disgust, a little moustache line. Above it, a two-line caption in dark grey bold sans, with one word in capitals and a blue sweat-drop emoji. The right face is orange: half-closed sly eyes with lashes and a smirk. Above it, a matching two-line caption in orange with a pineapple emoji. Glossy orange gummies fly around the edges (top-right, mid-left, right edge). The product pouch stands bottom-centre, overlapping the bottom of both faces.",
+ fix:["The flying orange gummies become glossy yellow sour pineapple gummy worms in the same spots."],
+ swaps:["Recolour everything from the reference’s orange to the main colour of the Sperm Worms pouch in Image 2.","Replace the floating round gummies with floating sour pineapple gummy worms.","Put the Sperm Worms pouch from Image 2 bottom-centre where the reference pouch sits."],
+ headlines:["She’ll Swallow. We Promise.","Spit or swallow? Ask the pineapple.","From bleach to sour pineapple."],
+ sub:"",callouts:["[Caption above the left grey face] Her, when you taste like BLEACH 💦","[Caption above the right orange face] Her, when you taste SOUR 🍍"]},
+
+{key:"you-vs-ex",brand:"Lumeo",title:"This is you. This is her ex.",format:"Static",ratio:"9:16",person:false,
+ imgs:[{id:"1028365080143834"}],pages:"Ryan Millers",start:"1 Jul",end:"10 Aug",days:41,versions:5,live:false,
+ why:"A brutal comparison on black: three sad droplets versus a splashing glass of milk. Insecurity plus a punchline, and the product only shows up as the fix.",
+ fit:"Direct sibling of our #1 scaled ad, Empty Glass vs Full Splash (213 purchases). Easiest win on this page.",fitTag:true,
+ scene:"Tall 9:16, solid black background with lots of empty black space top and bottom. Upper third, centred: a large bold white sans-serif headline on one line, with a smaller bold white line in brackets under it. Middle: two objects side by side. Left: three tiny white droplets with a small bold white caption under them. Right: a full glass of milk with a big white splash erupting out of the top, with a small bold white caption under it. Lower area: a hand comes in from the left edge holding two small orange gummies, with a small curved white arrow pointing right to two centred lines of white copy, and a tiny footnote line in brackets underneath.",
+ fix:["The two gummies in the hand become two yellow sour pineapple gummy worms.","Add the Sperm Worms pouch from Image 2, small, in the bottom-right corner. This is the only new element."],
+ swaps:["Bottom-left: a hand holding two sour pineapple gummy worms with a small curved arrow to the line of copy.","Make the splash on the right bigger and messier, spilling over the table.","Add the Sperm Worms pouch from Image 2 in the bottom-right corner."],
+ headlines:["Bigger Ropes.","Don’t be the drip.","Faster Swimmers."],
+ sub:"(stop disappointing her)",callouts:["[Small caption under the three droplets] This is you.","[Small caption under the splashing glass] This is her ex.","[Two lines next to the hand, after the arrow] The bigger-load stack packed into 4 sour pineapple gummies.","[Tiny footnote in brackets under that] (30-day money-back guarantee)"]},
+
+{key:"hand-callouts",brand:"Lumeo",title:"Gummies in hand + ingredient arrows",format:"Static",ratio:"1:1",person:false,
+ imgs:[{id:"1439896274833078",label:"1:1"},{id:"980146791503117",label:"9:16",ratio:"9:16",
+   scene:"Tall 9:16, white background. Upper-middle: a two-line headline in heavy black geometric sans-serif. Middle: a hand from the right edge pinching two small orange gummies. On the left, four short labels each with a small colourful icon, with curved black arrows pointing at the gummies; one label at the top-right with a test-tube icon also points at them. Lower-left: a small black box with white text and a bold black line under it.",
+   callouts:["[Top-right label with test-tube icon] Bigger loads by week 2","[Left label 1 with icon] Zinc","[Left label 2 with icon] L-carnitine","[Left label 3 with icon] Folate","[Left label 4 with icon] Selenium","[Small black box, lower-left] sour pineapple taste","[Bold line under the box] 4 a day"]}],
+ pages:"Lumeo, Ryan Millers",start:"3 Jun",end:"11 Aug",days:69,versions:3,live:false,
+ why:"Product in hand plus four arrows explains what’s inside without a science lecture. ‘Delicious taste, 5 calories’ answers the pill objection. Ran 69 days in 9:16 and 42 in 1:1.",
+ fit:"Benefit-led product shot: our best angle by volume (8 winners).",fitTag:true,
+ scene:"Square, very light grey background. Top-left: a two-line headline in huge heavy black geometric sans-serif. Right-centre: a hand coming in from the bottom-right pinches two small orange gummies between thumb and finger. Around the gummies, four short labels, each with a thin black line icon and a curved black hand-drawn arrow pointing at the gummies: upper-left, upper-right, middle-left and lower-left. Bottom-left: a small solid black box with white bold text, and a bold black line of text under it.",
+ fix:["The two gummies in the hand become two yellow sour pineapple gummy worms."],
+ swaps:["The hand now holds two sour pineapple gummy worms.","Replace the reference’s icons with simple line icons that match our callouts.","Small Sperm Worms pouch from Image 2 bottom-right."],
+ headlines:["Start Shooting Ropes.","Boost Your Boys.","Your swimmers’ new snack."],
+ sub:"",callouts:["[Upper-left label with test-tube icon] Bigger loads by week 2","[Upper-right label with star-eyes icon] Watch her jaw drop","[Middle-left label with icon] Faster swimmers","[Lower-left label with icon] Zinc + L-carnitine","[Small black box, bottom-left] sour pineapple taste","[Bold line under the box] 4 a day"]},
+
+{key:"didnt-list",brand:"Lumeo",title:"“I didn’t…” confession list",format:"Static",ratio:"4:5",person:false,
+ imgs:[{id:"1594183275617415"}],pages:"Lumeo",start:"4 Aug",end:"15 Sep",days:43,versions:5,live:false,
+ why:"First-person headline in a marker-style font on black, then a list of everything he did NOT have to do. It kills every alternative in one glance.",
+ fit:"Relatable-problem hook: our best hook (14% hit rate).",fitTag:true,
+ scene:"4:5, solid black background. Top: a centred two-line headline in a white casual marker / hand-lettered font, second line bigger. Left half: a bulleted list of four items, each wrapping onto two lines, in the same white marker font. Right half: the product pouch standing upright, slightly angled, label facing camera, with two small orange gummies at its base.",
+ fix:["The two gummies at the base of the pouch become two yellow sour pineapple gummy worms."],
+ swaps:["Replace the pouch with the Sperm Worms pouch from Image 2, with a small pile of gummy worms spilling out of it.","Put a crumpled pill bottle on the floor beside it."],
+ headlines:["I Accidentally Upgraded My Load at 41","How I Got Bigger Loads Without Trying","My Boys Got a Glow-Up"],
+ sub:"",callouts:["[Bullet 1] I didn’t choke down 9 pills a day","[Bullet 2] I didn’t chug pineapple juice","[Bullet 3] I didn’t quit coffee","[Bullet 4] I just ate 4 sour gummies"]},
+
+{key:"yellow-rope",brand:"Lumeo",title:"Knotted rope + stat pills",format:"Static",ratio:"1:1",person:true,
+ imgs:[{id:"1570546418199005",label:"Real men shoot ropes"},{id:"1108026365381021",label:"5 years of dribbling",
+   scene:"Square, flat bright yellow background. Across the very top: a thick red braided climbing rope tied into a big figure-eight knot near the top-right. Left half: a young blonde woman, waist-up, in a white cropped scoop-neck tee, hands behind her back, looking up at the rope with her mouth open in shock; small white figurines are stuck all over her face and chest. Right half, top: a big two-line heavy black condensed headline ending in an ellipsis. Middle-right: a second heavy black line starting with an ellipsis, with a small line in brackets under it. Bottom-right: a hand from the right edge holding two orange gummies, and two short bold black lines of text at the bottom.",
+   headline:"5 YEARS OF DRIBBLING…",sub:"",callouts:["[Second headline line, middle-right] …TO ROPES","[Small line in brackets under it] (by week 2)","[Bottom line 1] 4 gummies a day.","[Bottom line 2, bold] 100% her jaw drops."],
+   fix:["The small white figurines stuck on her face and chest become small yellow sour pineapple gummy worms stuck in the same places.","The two gummies in the hand become two yellow sour pineapple gummy worms."]}],
+ pages:"Men’s Health, Lumeo",start:"20 Jul",end:"16 Sep",days:59,versions:2,live:false,
+ why:"Loud yellow stops the scroll, the knotted rope is a visual pun on ‘ropes’, and four black pills of stats read in two seconds.",
+ fit:"Same idea as our scaled winner Dribbles to Knotted Ropes (111 purchases), in a new layout.",fitTag:true,
+ flag:"The little figurines stuck all over her chest.",
+ scene:"Square, flat bright yellow background. Across the very top: a thick red braided climbing rope tied into a big figure-eight knot near the top-right. Left half: a young blonde woman, waist-up, in a white cropped scoop-neck tee, hands behind her back, looking up at the rope with her mouth open in shock; small white figurines are stuck all over her face and chest. Right half: a two-line headline in heavy condensed capitals (first line black, second line red). Below it, four black rounded pill shapes stacked vertically, each with a big bold white number on the left followed by smaller white text.",
+ fix:["The small white figurines stuck on her face and chest become small yellow sour pineapple gummy worms stuck in the same places.","Add the Sperm Worms pouch from Image 2, small, in the bottom-right corner below the pills."],
+ swaps:["Replace the woman with a new, fictional adult woman in a plain white tee, looking up at the rope in shock, holding the Sperm Worms pouch from Image 2.","The rope is made of braided yellow gummy worms."],
+ headlines:["REAL MEN SHOOT ROPES","BIGGER LOADS. NOT DRIBBLES."],
+ sub:"",callouts:["[Black pill 1: big number, then small text] 2 weeks to bigger loads","[Black pill 2] 0 embarrassing dribbles","[Black pill 3] 4 gummies a day","[Black pill 4] 100% her jaw drops"]},
+
+{key:"spitters",brand:"Lumeo",title:"Turning spitters into swallowers",format:"Static",ratio:"9:16",person:true,
+ imgs:[{id:"1618771922565525"}],pages:"Lumeo",start:"17 May",end:"15 Jul",days:60,versions:3,live:false,
+ why:"Meme layout: two reaction photos with captions underneath, then a one-line brand claim. Feels like a post, not an ad.",
+ fit:"Our scaled winner Spitters to Swallowers Gummy (126 purchases) proves the message; this is a fresh layout for it.",fitTag:true,
+ flag:"The close-up of lips dripping with fluid.",
+ scene:"Tall 9:16, white background with empty white space across the top quarter. Middle: two square photos side by side with a gap between them. Left: head-and-shoulders of a young woman with long brown hair scrunching her face in disgust. Right: extreme close-up of glossy red-lipstick lips with the tongue out. Under each photo, a centred two-line caption in black sans-serif. Below them, a centred two-line tagline in black. Bottom-left: a few small orange gummies scattered at the left edge. Bottom-right: the product pouch, large, tilted, cropped by the right and bottom edges.",
+ fix:["Right photo: in Image 1 the lips drip with white fluid. Instead, show the same red-lipstick lips smiling and biting into a yellow sour pineapple gummy worm, no fluid.","The scattered orange gummies become yellow sour pineapple gummy worms."],
+ swaps:["Left photo: a man’s hand offering a capsule pill; she grimaces. Right photo: she grins with a gummy worm between her teeth.","Gummy worms scattered bottom-left; the Sperm Worms pouch from Image 2 bottom-right."],
+ headlines:[""],
+ sub:"",callouts:["[Two-line caption under the left photo] Her when you taste bitter and salty.","[Two-line caption under the right photo] Her when you taste like sour pineapple.","[Centred two-line tagline below] Turning spitters into swallowers. 4 gummies a day."]},
+
+{key:"four-grid",brand:"Lumeo",title:"Four-panel taste grid",format:"Static",ratio:"4:5",person:true,
+ imgs:[{id:"2445837549264996"}],pages:"Lumeo",start:"25 May",end:"15 Jul",days:52,versions:1,live:false,
+ why:"Headline, texture, product and payoff in four squares. Works with a long, aggressive caption doing the talking.",
+ fit:"Taste angle again; a good second layout to test after Spitters.",fitTag:false,
+ flag:"Bottom-right lips dripping with fluid.",
+ scene:"4:5 split into a 2×2 grid of equal squares, no borders. Top-left: warm yellow-to-orange gradient with a centred four-line headline in black bold serif, and below it a small cut-out photo of a woman’s head grimacing. Top-right: a macro close-up filling the square with rows of glossy translucent orange round gummies, lit from behind. Bottom-left: solid orange backdrop; the product pouch stands centre with some orange gummies on the floor; a hand reaches in from the top-left holding gummies. Bottom-right: extreme close-up of glossy red-lipstick lips with the tongue out.",
+ fix:["Top-right: the gummies become a macro close-up of sugar-coated yellow sour pineapple gummy worms, same lighting.","Bottom-left: the gummies in the hand and on the floor become gummy worms.","Bottom-right: in Image 1 the lips drip with white fluid. Instead, the same lips bite into a gummy worm, no fluid."],
+ swaps:["Top-right: macro shot of sugar-coated sour pineapple gummy worms.","Bottom-right: a laughing woman holding a gummy worm up to the camera."],
+ headlines:["Turning spitters into swallowers.","Sour pineapple. Sweet results."],
+ sub:"",callouts:[]},
+
+{key:"money-back-review",brand:"Lumeo",title:"Giant claim + one review",format:"Static",ratio:"1:1",person:true,
+ imgs:[{id:"1446165903915567"}],pages:"Lumeo",start:"15 Jul",end:"13 Sep",days:61,versions:2,live:false,
+ why:"A huge serif claim, the guarantee in brackets, and one long, believable review in a Facebook comment bubble. The guarantee takes the risk out of the claim.",
+ fit:"Review-card format, which we have barely tested. Use a real review.",fitTag:false,
+ flag:"Invented reviews. Paste a real one from our 2,000+.",
+ scene:"Square, white background. Top: a giant one-line headline in very heavy black serif capitals spanning the width, with a smaller regular black line in brackets centred under it. Below: a large light-grey rounded Facebook-style comment bubble taking most of the lower two-thirds, with a small round profile photo of a man in a cap to its upper-left, a bold black name at the top inside the bubble, and the review in regular black sans-serif over about eight lines. Bottom-left corner: a hand holding two small orange gummies, overlapping the edge of the bubble.",
+ fix:["The profile photo shows a new, fictional man.","The two gummies in the hand become two yellow sour pineapple gummy worms."],
+ swaps:["Stack two comment bubbles instead of one, the second one shorter.","Bottom-left: a hand holding the Sperm Worms pouch from Image 2."],
+ headlines:["BIGGER LOADS","BOOST YOUR BOYS"],
+ sub:"(or your money back)",callouts:["[Bold name at the top of the comment bubble] [real customer first name + last initial]","[Review text in the bubble] [paste a real 5-star review here]"]},
+
+{key:"tbsp-pouch",brand:"Lumeo",title:"Pouch in hand + guarantee",format:"Static",ratio:"1:1",person:false,
+ imgs:[{id:"1930278694261352"}],pages:"Lumeo",start:"20 Jul",end:"30 Aug",days:42,versions:2,live:false,
+ why:"A specific, odd number (‘+1.7 Tbsp’) feels measured, and the guarantee underneath makes it safe. Simple hand-held product shot on dark.",
+ fit:"Product hero format (13% hit rate for us).",fitTag:true,
+ flag:"Don’t borrow their number. Only use claims we can back.",
+ scene:"Square, dark charcoal-to-black background. Top: a centred two-line headline, first line large heavy white sans-serif, second line the same size in a lighter weight. Centre: a hand from the bottom holds the product pouch up, slightly tilted, label facing camera, filling the middle. On the pouch’s lower-right corner sits a red starburst sticker with three short lines of white bold text. Bottom: two centred lines of bold white copy.",
+ fix:[],
+ swaps:["The hand squeezes the pouch and gummy worms burst out of the top.","Keep the red starburst sticker with our offer."],
+ headlines:["Bigger Loads by Week 2","Boost Your Boys in 2 Weeks"],
+ sub:"or your money back",callouts:["[Red starburst sticker] SAVE 30% TODAY","[Two bold lines at the bottom] Zinc, L-carnitine, folate & selenium packed into 4 sour pineapple gummies."]},
+
+{key:"spill-test",brand:"Lumeo",title:"Spill Test",format:"Static",ratio:"4:5",person:true,
+ imgs:[{id:"1528557942153683"}],pages:"Men’s Health",start:"9 Jul",end:"14 Sep",days:68,versions:3,live:false,
+ why:"Looks like a native Instagram photo with one label. The ad copy is a wall of short testimonials, so the image only needs to stop the thumb.",
+ fit:"Native photo plus testimonials caption. Pair with real reviews.",fitTag:false,
+ flag:"Milk poured over her body. Too explicit for us and for Meta.",
+ scene:"4:5 phone photo in a bedroom with rumpled cream bedding and a taupe sheet, daylight from the left. A young woman with long brown hair kneels on the bed facing away, looking back over her shoulder at the camera. She wears a white one-shoulder tank top and dark taupe leggings. On the right, a glass jug tilts and pours white liquid. Middle-left: a white rounded label chip with bold black text, followed by a hand-over-mouth emoji.",
+ fix:["In Image 1 the milk is poured onto her leggings. Instead, the jug pours bright yellow sour pineapple slushie, which splashes onto the sheet beside her; nothing lands on her.","Add the Sperm Worms pouch from Image 2 lying on the bed in the foreground."],
+ swaps:["Same bedroom; she sits facing camera laughing, holding the pouch, with a yellow slushie spilled across the bed."],
+ headlines:[""],
+ sub:"",callouts:["[White label chip, middle-left] Spill Test 🍍"]},
+
+{key:"shot-glass",brand:"Lumeo",title:"Shot glass vs. overflowing glass",format:"Static",ratio:"4:5",person:true,
+ imgs:[{id:"1497776214897504"}],pages:"Ryan Millers",start:"7 Jul",end:"15 Sep",days:71,versions:1,live:false,
+ why:"The longest-running Lumeo ad. No text at all: a smug woman, a tiny shot glass and a huge overflowing glass. The long story caption underneath (‘The Legend of Horst Schultz’) does the selling.",
+ fit:"Comparison visual we already win with, plus long-form story copy we haven’t tested.",fitTag:true,
+ scene:"4:5 photo in a bright modern white kitchen. A woman in her 30s with long dark hair in a ponytail, black rectangular glasses and a fitted black short-sleeve top sits behind a white marble counter, forearms folded on it, giving the camera a knowing closed-mouth smile. On the counter in front of her: front-left, a tiny shot glass with a little white liquid at the bottom; front-right, a tall glass overflowing with thick white liquid that runs down the sides and pools on the marble. No text anywhere.",
+ fix:["Add the Sperm Worms pouch from Image 2 standing on the counter just to the right of the tall glass."],
+ swaps:["The tall glass is a giant glass jug, and a gummy worm hangs over its rim."],
+ headlines:[""],sub:"",callouts:[]},
+
+{key:"press-advertorial",brand:"Lumeo",title:"Newspaper advertorial",format:"Static",ratio:"1:1",person:true,
+ imgs:[{id:"1554413142862284"}],pages:"Men’s Health Insider",start:"27 Jul",end:"15 Sep",days:51,versions:1,live:false,
+ why:"Dressed as a news story: masthead, dateline, headline, two photos. Borrowed authority, linked to a long listicle.",
+ fit:"Editorial format. Do it with our own masthead or real coverage (we were covered by NYT, WSJ, VICE, Men’s Health).",fitTag:false,
+ flag:"A fake Daily Mail masthead. Impersonating a publication is a fast way to get the account banned.",
+ scene:"Square, white, newspaper style. Top centre: a two-word masthead, the first word in a thin modern sans and the second in heavy blackletter, with a small subtitle under it at the right. A thin black horizontal rule; a small dateline at the left above it. Then a bold black centred three-line headline. The bottom half is two photos side by side: left, a smiling woman with long brown hair indoors holding the product pouch up next to her face; right, a second woman photographed from above, leaning back.",
+ fix:["The masthead is a real newspaper. Replace it with an invented masthead in the same two-style treatment that reads exactly: The Daily Worm. Do not show any real publication name.","Right photo: replace it with a woman laughing at the camera while biting a yellow sour pineapple gummy worm."],
+ swaps:["Make it look like a phone screenshot of a news article, with a share bar at the top."],
+ headlines:["This Sour Gummy Is Giving Men Bigger Loads","The Gummy Worm Men Are Hiding From Their Friends"],
+ sub:"",callouts:["[Small dateline above the rule, left] Friday, October 17, 2026"]},
+
+{key:"dad-split",brand:"Lumeo",title:"Dad + wife reaction split-screen",format:"Video",ratio:"9:16",person:true,
+ imgs:[{id:"1906775670017407"}],pages:"Lumeo",start:"2 Jul",end:"12 Aug",days:42,versions:5,live:false,dur:"0:44",
+ why:"UGC split-screen: a fit dad pointing at the product on top, his wife’s knowing smile on the bottom, one orange caption across the middle.",
+ fit:"Reaction persona again; a cheap UGC shoot.",fitTag:true,
+ scene:"Tall 9:16 frame split horizontally. Top half: a shirtless, muscular man in his 40s with glasses and a short beard in a home gym (squat-rack frame, ceiling fan), holding the product pouch up in one hand and pointing at it with the other, looking off to the side mid-sentence. Across the seam: an orange rounded rectangle with a two-line black sans-serif caption ending in a tongue-out emoji. Bottom half: close-up of a smiling woman with dark hair pulled back and hoop earrings in a white marble bathroom.",
+ fix:[],
+ swaps:["Bottom half: the wife holds up a laundry basket overflowing with sheets and raises an eyebrow."],
+ headlines:["How dads are getting bigger loads in 2026 😛","My wife noticed before I told her 😛"],
+ sub:"",callouts:[],
+ beats:["0–2s: split-screen opens on the caption. Dad holds the pouch up, wife smirks.","2–10s: dad, to camera: ‘My wife thinks I changed something. I did.’ Pops 4 gummies.","10–25s: what’s inside (zinc, L-carnitine, folate) as quick text pops; wife nods along.","25–35s: wife: ‘Week two. That’s all I’m saying.’","35–44s: end card with the pouch: 30-day money-back, subscribe and save."]},
+
+{key:"lego-hose",brand:"Lumeo",title:"Toy-figure garden hose",format:"Video",ratio:"9:16",person:false,
+ imgs:[{id:"935707845829080"}],pages:"Try Lumeo",start:"23 Sep",end:"live",days:25,versions:6,live:true,dur:"1:34",
+ why:"A toy figure holding a sad, dribbling hose while his wife looks on. The joke lands without showing anything, so it survives review. Live on the relaunched page with 6 copies.",
+ fit:"Absurd tone (our only winning tone) and the same leaky-to-hydrant metaphor as our winners.",fitTag:true,
+ flag:"Don’t make it look like LEGO. Use a generic plastic toy figure.",
+ scene:"Tall 9:16 cinematic macro photo of toy figures in a dim bedroom lit by a warm bedside lamp at the left, shallow depth of field. Foreground centre: a yellow plastic toy figure of a man with brown hair in navy pyjamas sits on a blue-green plaid bedspread, looking worried, holding a black corrugated hose that drips a small white puddle onto the bed. Background, out of focus: a female toy figure sitting up in bed, looking unimpressed. No text.",
+ fix:["Make both figures generic plastic toy figures, not LEGO (no studs, no LEGO branding).","Add the Sperm Worms pouch from Image 2, small, on the nightstand beside the lamp."],
+ swaps:["The hose is a limp gummy worm instead."],
+ headlines:[""],sub:"",callouts:[],
+ beats:["0–3s: sad toy man holds a dribbling hose; wife sighs in bed.","3–8s: he spots the Sperm Worms pouch on the nightstand and eats a gummy worm.","8–15s: the hose stiffens and blasts like a fire hose; wife’s jaw drops; the lamp gets knocked over.","15–25s: VO lists the benefits over quick cuts: bigger loads by week 2, zinc + L-carnitine, sour pineapple.","Last 3s: pouch end card with the guarantee."]},
+
+{key:"skeleton",brand:"Lumeo",title:"X-ray skeleton eats the gummy",format:"Video",ratio:"9:16",person:false,
+ imgs:[{id:"3113144785540839"}],pages:"Try Lumeo",start:"26 Sep",end:"live",days:22,versions:7,live:true,dur:"1:46",
+ why:"A glossy 3D skeleton chews the gummy, glows from the inside and sprays. Absurd, visual, and runs with a long first-person story as the caption. 7 copies, still live.",
+ fit:"Our Four-Week Skeleton Transformation is already a winner (64 purchases). This is a new angle on it.",fitTag:true,
+ scene:"Tall 9:16 3D render of a bright modern bedroom with light wood floor, grey bedding and white curtains. Centre: a glossy translucent glass-like human skeleton with cartoon eyeballs lifts an orange gummy to its teeth. A warm orange glow runs down its spine to the pelvis, and a powerful white jet sprays out diagonally from the pelvis towards the bottom-left. A small product pouch sits on the nightstand behind it. Mid-frame: a white rounded caption box with three centred lines of black sans-serif text.",
+ fix:["The gummy is a yellow sour pineapple gummy worm and the glow is pineapple-yellow.","The white jet becomes a jet of bright yellow pineapple juice with yellow sparkles, same shape and direction.","The pouch on the nightstand is the Sperm Worms pouch from Image 2."],
+ swaps:["Two skeletons side by side: the left one sad and slumped, the right one glowing after the gummy."],
+ headlines:["There’s a gummy that makes your boys swim faster","4 gummies a day. Watch what happens."],sub:"",callouts:[],
+ beats:["0–2s: skeleton chews a gummy worm; caption appears.","2–6s: yellow glow runs down the spine to the pelvis.","6–10s: pineapple-juice burst; skeleton flexes.","10–60s: VO reads a short first-person story: ‘I was 38 and…’","End: pouch with 30-day money-back."]},
+
+/* ---------------- PRIMAL STORM ---------------- */
+{key:"mascot-offer",brand:"Primal Storm",title:"Cartoon jar mascot + offer",format:"Static",ratio:"1:1",person:false,
+ imgs:[{id:"1232707682120566",label:"Walking mascot"},{id:"4264442143806934",label:"Flexing mascot",
+   scene:"Square 3D-rendered scene of a cosy teenager’s bedroom (desk with lamp and books on the left, a window with sunlight, a bed and a poster on the right). Top: a centred three-line headline, the first line thin white capitals, the next two heavy white capitals. Centre: the product jar as a 3D cartoon character with big shiny eyes and a confident grin, flexing two muscular cartoon arms, standing on short legs, surrounded by a crackling white-and-blue electric glow and sparkles."}],
+ pages:"PrimallStorm, Primal-Storm",start:"14 May",end:"live",days:157,versions:2,live:true,
+ why:"The product turned into a cartoon character, plus one offer line. Totally brand-safe, impossible to scroll past, and live for 157 days without burning out.",
+ fit:"Absurd plus product hero: exactly what wins for us. Our pouch makes a great character.",fitTag:true,
+ scene:"Square, flat bright orange background. Top: a centred three-line headline, the first line thin white capitals, the next two heavy white capitals. Centre: the product jar drawn as a 1930s rubber-hose cartoon character with big googly eyes, white cartoon gloves, thin black arms and legs and chunky orange-and-white sneakers. It walks to the right, saluting with one hand and carrying a green shopping bag in the other.",
+ fix:["The cartoon character’s body is the Sperm Worms pouch from Image 2 instead of the jar, with the label art clearly readable. Same eyes, gloves, limbs, sneakers, pose and props."],
+ swaps:["The character holds a little gummy worm on a leash like a dog."],
+ headlines:["SUBSCRIBE & SAVE 30%","YOUR BOYS WANT BACKUP"],
+ sub:"",callouts:["[Thin first line, above the headline] LAST CHANCE"]},
+
+{key:"crying-mascot",brand:"Primal Storm",title:"“We spent our whole ad budget”",format:"Static",ratio:"1:1",person:false,
+ imgs:[{id:"1481109377143438"}],pages:"PrimallStorm",start:"14 May",end:"live",days:157,versions:1,live:true,
+ why:"A self-aware meme: the jar sobbing in a flat illustrated meadow, begging you to try it. Disarming, shareable, no claims to approve.",
+ fit:"Meme format has our best format hit rate (17%). Zero compliance risk.",fitTag:true,
+ scene:"Square flat illustration with bold black outlines: a flat grey sky, rust-orange rolling hills, orange poppies in the lower corners and edges. Centre: the product jar as a cartoon character sitting in a blue puddle, sobbing, with two fountains of blue tears shooting out of its eyes and its mouth wide open, tiny black arms and legs. Top and bottom: meme captions in heavy white condensed capitals with a black outline.",
+ fix:["The crying character is the Sperm Worms pouch from Image 2 instead of the jar, with the label clearly readable. Same face, tears, puddle and pose."],
+ swaps:["Swap the poppies for little pineapples, and a single gummy worm pats the pouch on the back."],
+ headlines:["WE SPENT OUR WHOLE AD BUDGET"],sub:"",callouts:["[Bottom meme caption] PLEASE TRY SPERM WORMS"]},
+
+{key:"banana-sale",brand:"Primal Storm",title:"Sale banner + innuendo prop",format:"Static",ratio:"1:1",person:true,
+ imgs:[{id:"992943046756420"}],pages:"PrimallStorm",start:"14 May",end:"live",days:157,versions:1,live:true,
+ why:"A sale banner top and bottom, a big claim, the product front-and-centre, and a cheeky prop on the right. Classic direct-response layout, live since May.",
+ fit:"Product hero with an offer. Swap their size claim for our volume claim.",fitTag:true,
+ flag:"‘+2 inches’ is a claim we can’t make.",
+ scene:"Square. A full-width red banner along the top with white heavy capitals, and a full-width red banner along the bottom with white heavy capitals. Background: a soft, warm bedroom with a woman in black lace lingerie crouching on the right, seen from behind, face not visible. Left: a three-line headline in heavy capitals (first words red, rest black). Middle-left: the product jar, big, with two black capsules on the floor in front of it. Right foreground: a banana inside a condom.",
+ fix:["Replace the jar with the Sperm Worms pouch from Image 2, same size and spot; the two capsules become two yellow sour pineapple gummy worms."],
+ swaps:["Background woman in a silk robe; the prop is a giant gummy worm peeking out of a condom wrapper."],
+ headlines:["BIGGER LOADS"],sub:"FASTER SWIMMERS",callouts:["[Top red banner] FALL SALE ENDS SOON","[Bottom red banner] SUBSCRIBE & SAVE 30%"]},
+
+{key:"vibrator",brand:"Primal Storm",title:"“She’ll forget her vibrator exists”",format:"Static",ratio:"9:16",person:true,
+ imgs:[{id:"2229131597902975"}],pages:"PrimallStorm",start:"16 May",end:"live",days:155,versions:1,live:true,
+ why:"A bold partner-benefit headline, then a rhythmic ‘1 capsule. 10 days. Full power.’ list with three WITHOUTs, plus a deflated-balloon-to-rocket emoji gag.",
+ fit:"The partner-benefit desire is our top desire (25%).",fitTag:true,
+ flag:"Topless model. Keep her dressed.",
+ scene:"Tall 9:16 photo, soft grey studio backdrop. A woman with long brown hair sits on rumpled bedding, her head thrown back and mouth open in pleasure, body angled away from camera with a grey sweater pulled down around her lower back. Upper-left: a three-line headline in bold white sans-serif. Below it, on the left: a stacked list of six lines in white condensed capitals; the last three lines start with an orange word. Top-right: a small black-and-red sale sticker. Right-middle: an orange deflated-balloon emoji with a red arrow pointing to a rocket emoji.",
+ fix:["She wears the grey knit sweater properly over her shoulders and back (nothing bare beyond her neck and arms). Same pose and expression.","Add the Sperm Worms pouch from Image 2, small, in the bottom-right corner."],
+ swaps:["She hugs the pouch to her chest with her eyes closed, blissful."],
+ headlines:["She’ll forget her vibrator exists.","She’ll forget her toy drawer exists."],sub:"",callouts:["[List line 1] 4 GUMMIES.","[List line 2] 14 DAYS.","[List line 3] FULL POWER.","[List line 4, first word orange] WITHOUT PILLS,","[List line 5, first word orange] WITHOUT PLANNING,","[List line 6, first word orange] WITHOUT HASSLE.","[Sale sticker, top-right] SAVE 30%"]},
+
+{key:"founder",brand:"Primal Storm",title:"“I’m the founder” offer video",format:"Video",ratio:"9:16",person:true,
+ imgs:[{id:"1329464019034343"}],pages:"PrimallStorm",start:"17 May",end:"live",days:154,versions:1,live:true,dur:"0:31",
+ why:"Founder-to-camera in a hallway, holding the jar, with the offer pinned at the top. 31 seconds, live for five months.",
+ fit:"We have a real founder (Jeff). Our ‘Fresh Batch Ships Today’ founder video is testing now.",fitTag:true,
+ scene:"Tall 9:16 phone video frame. A muscular man in his 40s with a salt-and-pepper beard, in a stars-and-stripes tank top and light denim shorts, stands in a beige hallway next to a wooden door, holding the product jar at chest height and looking at camera. Top: two stacked text boxes, red text on white above black text on white. Lower third: a white subtitle with a thin dark outline.",
+ fix:["Better still, film our real founder in the same framing; for a mock-up, the man is a new, fictional man."],
+ swaps:["Set it in our warehouse with stacked boxes behind him."],
+ headlines:["Subscribe & Save 30%"],sub:"Fall Sale Ends Soon",callouts:["[White subtitle, lower third] I’m Jeff, co-founder of Sperm Worms"],
+ beats:["0–3s: ‘I’m Jeff, co-founder of Sperm Worms. Yes, that’s really the name.’","3–12s: why gummies: ‘Guys don’t take pills. They do eat candy.’","12–22s: what’s in it, and that you notice bigger loads by week 2.","22–31s: the offer and the 30-day money-back, pointing at the pouch."]},
+
+{key:"warrior",brand:"Primal Storm",title:"Cinematic ingredient-origin myth",format:"Video",ratio:"9:16",person:true,
+ imgs:[{id:"4178787915693561",label:"Warrior"},{id:"3394949633997394",label:"Elder",
+   scene:"Tall 9:16 cinematic AI frame in a sunlit jungle clearing with floating flower petals and dust. Centre: a muscular grey-bearded elder in a patterned loincloth and belt stands in a powerful pose, surrounded by smiling young villagers in traditional dress. Bold white caption with black outline in the lower third."}],
+ pages:"PrimallStorm",start:"14 May",end:"live",days:157,versions:2,live:true,dur:"1:27",
+ why:"Epic AI footage of a glowing jungle warrior and a magical root, with word-by-word captions. Feels like a movie trailer for an ingredient.",
+ fit:"Story-led video is weak for us (2%). Test it only as an absurd parody.",fitTag:false,
+ scene:"Tall 9:16 cinematic AI frame. A muscular tribal warrior with a topknot, bead-and-tooth necklace and woven loincloth strides toward camera through a misty golden-hour jungle with god-rays; glowing golden energy veins run along his arms; glowing cut roots lie in the foreground bottom-left. A bold white caption with a black outline sits in the lower third.",
+ fix:["The glowing roots in the foreground become a glowing pile of yellow sour pineapple gummy worms with the Sperm Worms pouch from Image 2 among them."],
+ swaps:["Make it a parody: a heroic warrior made of sour pineapple gummy worms rises from a pineapple grove."],
+ headlines:["okay so"],sub:"",callouts:[],
+ beats:["0–5s: ‘Okay so… deep in a pineapple jungle…’","5–20s: the gummy-worm warrior awakens; captions explain zinc and L-carnitine like ancient secrets.","20–40s: villagers cheer; the warrior flexes; pineapples explode with confetti.","40s–end: cut to the pouch on a modern kitchen counter: ‘Or just eat 4 a day.’"]},
+
+{key:"pool-guarantee",brand:"Primal Storm",title:"Product framed by body + press bar",format:"Static",ratio:"1:1",person:true,
+ imgs:[{id:"965624123004174"}],pages:"Primal-Storm",start:"25 May",end:"live",days:146,versions:1,live:true,
+ why:"The product covers the subject so the photo stays just inside policy; a money-back headline, four arrow callouts and a strip of press logos stack trust on top of the tease.",
+ fit:"Guarantee-led benefit ad. Use our real press only.",fitTag:false,
+ flag:"Their press logos are not real coverage. Use only outlets that actually covered Sperm Worms.",
+ scene:"Square night photo. Background: a resort swimming pool lit turquoise, with palm trees, cabanas and warm lamps. Foreground, filling the middle and lower frame: a woman seen from behind from the waist down to the upper thighs, in a dark red bikini bottom, facing away from camera; the product jar is placed directly over the centre of her bottom, covering it. Top: a huge yellow heavy sans-serif headline line, a white heavy line under it, and a small white line under that. Four short white labels with curved white arrows pointing at the product: upper-left, upper-right, lower-left and lower-right. Bottom: a thin white rule and a row of white magazine logos.",
+ fix:["The row of magazine logos becomes just the small ‘As seen in’ text line above. No logos."],
+ swaps:["A new, fictional woman in a one-piece swimsuit, waist-up, holding the Sperm Worms pouch in front of her."],
+ headlines:["BIGGER LOADS"],sub:"OR YOUR MONEY BACK",callouts:["[Small white line under the subhead] No pills. Just 4 sour pineapple gummies.","[Upper-left label with arrow] Bigger loads","[Upper-right label with arrow] Faster swimmers","[Lower-left label with arrow] More energy","[Lower-right label with arrow] Zinc + L-carnitine","[Bottom line under the rule, small white text] As seen in [only outlets that really covered us]"]},
+
+{key:"mascot-duo",brand:"Primal Storm",title:"Buff mascot vs. sad pill bottle",format:"Video",ratio:"9:16",person:false,
+ imgs:[{id:"1819201469462699"}],pages:"Primal-Storm",start:"3 Jul",end:"live",days:107,versions:1,live:true,dur:"1:43",
+ why:"A muscular, grinning jar and a nervous generic bottle on a kitchen counter, talking to camera. Comparison plus mascot plus subtitles.",
+ fit:"Mascot plus comparison. Gummies vs. pills is our natural fight.",fitTag:true,
+ scene:"Tall 9:16 3D render of a bright kitchen with open wooden shelves, a window and a white marble counter. Left: the product jar as a cartoon character with huge muscular black arms, googly eyes and a wide grin. Right: a slim capsule bottle as a nervous cartoon character with big eyes and thin orange arms. White subtitle text in the lower third.",
+ fix:["The muscular character on the left is the Sperm Worms pouch from Image 2 (label readable). The nervous bottle on the right is a plain white capsule bottle with no brand."],
+ swaps:["The pill bottle is sweating and holding a glass of water."],
+ headlines:["Hi, I’m Sperm Worms"],sub:"",callouts:[],
+ beats:["0–3s: ‘Hi, I’m Sperm Worms.’ Pouch flexes. The bottle: ‘And I’m… capsules.’","3–20s: banter. Capsules: ‘Take three with water.’ Pouch: ‘Eat four. They taste like sour pineapple.’","20–40s: pouch lists zinc, L-carnitine, folate; the bottle sweats more.","End: offer card. The bottle quietly rolls off the counter."]},
+
+{key:"scammed",brand:"Primal Storm",title:"“I got scammed by…” reverse psychology",format:"Video",ratio:"9:16",person:true,
+ imgs:[{id:"1798538614515388"}],pages:"The Perf Hub",start:"8 Oct",end:"live",days:10,versions:4,live:true,dur:"0:48",
+ why:"An angry little 3D character yelling at the product with a ‘scammed’ caption. Reverse psychology pulls in skeptics, and the punchline is that it worked too well. New, but already 4 copies.",
+ fit:"Same mock-complaint hook we are testing (Fire Hydrant Mock Complaint).",fitTag:true,
+ scene:"Tall 9:16 Pixar-style 3D frame of a cosy living room in warm lamplight. A grey-haired man in a grey tee and jeans lounges on a grey sofa on the left, looking annoyed. A small bald beige cartoon creature pops up from the front of his jeans, screaming and shaking a fist at the product jar sitting on his thigh at right. A red rounded caption box with white text sits across the lower middle.",
+ fix:["Replace the jar with the Sperm Worms pouch from Image 2, same spot and size."],
+ swaps:["The little character is a tiny, furious cartoon gummy worm."],
+ headlines:["I got scammed by Sperm Worms"],sub:"",callouts:[],
+ beats:["0–3s: caption ‘I got scammed by Sperm Worms’; the little character screams at the pouch.","3–15s: ‘They said bigger loads by week 2. It was week ONE.’","15–30s: list of ‘complaints’: new sheets, laundry bills, she keeps asking for more.","30–48s: man shrugs, eats 4 more; end card with the offer."]},
+
+{key:"anatomy-mascot",brand:"Primal Storm",title:"Mascot inside the body (3D)",format:"Video",ratio:"9:16",person:false,
+ imgs:[{id:"1082110038022576"}],pages:"The Perf Hub",start:"3 Oct",end:"live",days:15,versions:5,live:true,dur:"1:28",
+ why:"A 3D medical-style explainer with the cheerful mascot riding through it. Mechanism plus character, sent to a quiz funnel. 5 copies in two weeks.",
+ fit:"3D explainer. Our Sperm Count Tells on Hormones (Dojo) did 16 purchases.",fitTag:false,
+ scene:"Tall 9:16 glossy 3D medical illustration of the lower body on a deep blue background: red and blue blood vessels, pelvis bones, and a large cross-sectioned blood vessel clogged with yellow plaque and red blood cells curving down the centre. A cartoon product jar mascot with a grinning face and little arms sits on top of the vessel. Bold white capitals with a black outline in the lower third.",
+ fix:["The mascot is the Sperm Worms pouch from Image 2 with the same cartoon face and arms."],
+ swaps:["Swap the blood vessels for a stylised sperm-cell race inside a tube; the pouch mascot rides a sperm cell like a jet ski."],
+ headlines:["TRY ME RISK-FREE"],sub:"",callouts:[],
+ beats:["0–5s: 3D tour: sluggish sperm cells drifting.","5–25s: the pouch mascot zooms in, handing out zinc and L-carnitine power-ups.","25–60s: cells speed up; captions: ‘faster swimmers’, ‘bigger loads by week 2’.","End: ‘Try me risk-free’ with the 30-day guarantee."]},
+
+{key:"pickle-mirror",brand:"Primal Storm",title:"Sad pickle in the mirror",format:"Video",ratio:"9:16",person:false,
+ imgs:[{id:"1128327149542281"}],pages:"The Perf Hub",start:"3 Oct",end:"live",days:15,versions:3,live:true,dur:"1:40",
+ why:"A Pixar-style droopy cucumber in pyjamas sees his confident, glowing self in the mirror. An innuendo character with real feeling.",
+ fit:"Absurd character. Swap the pickle for a gummy worm.",fitTag:true,
+ scene:"Tall 9:16 Pixar-style 3D frame of a soft pastel bedroom at sunset with a pink haze. Left foreground: a tall cucumber character in cream striped pyjamas seen from behind, slightly slumped. Right: a tall wooden-framed mirror showing his reflection, the same cucumber smiling contentedly, wrapped in glowing golden swirls. No text.",
+ fix:["Add the Sperm Worms pouch from Image 2, small, on the floor beside the mirror."],
+ swaps:["The character is a droopy sour pineapple gummy worm in striped pyjamas; the reflection is the same worm, standing tall and glowing yellow."],
+ headlines:[""],sub:"",callouts:[],
+ beats:["0–5s: droopy character sighs at the mirror.","5–15s: the reflection winks and points at the pouch on the floor.","15–30s: he eats four gummies; sparkles; he straightens up.","30s–end: VO benefits, then pouch with the guarantee."]},
+
+{key:"niche-fix",brand:"Primal Storm",title:"Niche headline + benefit list",format:"Static",ratio:"1:1",person:false,
+ imgs:[{id:"2917560375261634",label:"One jar"},{id:"1392784586259023",label:"Three jars",
+   scene:"Square, warm light beige background. Top-left: a three-tier headline: a black heavy italic capitals line, then a huge red heavy capitals line, then a black heavy italic capitals line. Left: five short bullets, each a red line icon plus black bold italic text. Right: three product jars standing in a row, the middle one in front. Bottom: a red rounded bar with white capitals, then a huge black condensed capitals offer line, then a red capitals guarantee line.",
+   fix:["Replace the three jars with three Sperm Worms pouches from Image 2 in the same arrangement."]}],
+ pages:"Primal Storm Supplements",start:"7 Oct",end:"live",days:11,versions:2,live:true,
+ why:"Calls out one specific group in the headline, then five icon benefits and a stacked offer block. Part of their new diabetic-men push with its own quiz funnel.",
+ fit:"Our version calls out couples trying to conceive, our fertility niche.",fitTag:false,
+ scene:"Square, light grey concrete-texture background. Top-left: a three-tier headline: a black heavy italic capitals line, then a huge orange heavy capitals line, then a black heavy italic capitals line ending in a red word. Left: five short bullets, each an orange line icon plus black bold italic text. Right: the product jar lying diagonally, big. Bottom: an orange rounded bar with black capitals, then a huge black condensed capitals offer line, then a red capitals guarantee line.",
+ fix:["Replace the jar with the Sperm Worms pouch from Image 2, lying at the same diagonal angle and size."],
+ swaps:["Add a pregnancy test with two lines next to the pouch."],
+ headlines:[""],sub:"",callouts:["[Headline tier 1, black italic] TRYING TO CONCEIVE?","[Headline tier 2, huge] HIS FIX","[Headline tier 3, black italic, last word red] WITH 6 NUTRIENTS.","[Bullet 1] Bigger loads","[Bullet 2] Faster swimmers","[Bullet 3] Sperm health support","[Bullet 4] More energy","[Bullet 5] Sour pineapple taste","[Rounded bar] TRY SPERM WORMS","[Huge offer line] SUBSCRIBE & SAVE 30%","[Red guarantee line] 30-DAY MONEY-BACK GUARANTEE"]},
+
+{key:"timeline",brand:"Primal Storm",title:"Callout + day-by-day timeline",format:"Static",ratio:"1:1",person:false,
+ imgs:[{id:"1107419285174563"}],pages:"Primal Storm Supplements",start:"7 Oct",end:"live",days:11,versions:1,live:true,
+ why:"A callout headline, then a four-step timeline (Hour 1 → Day 90) in warming colours, product hero below, and a ‘verified by 20,000+ men’ badge.",
+ fit:"Our own site already has this timeline: day 7, week 2, month 1, month 3.",fitTag:true,
+ scene:"Square, black background. Top: a two-line headline, first line white heavy capitals, second line orange heavy capitals. Below: a full-width band split into four columns shading from light peach (left) to deep orange (right); each column has a white bold label at the top joined to the next by a thin line, a pair of emoji, and two short white lines of text. Bottom-centre: the large product jar on black with orange rim light. Bottom-left: one line of ingredients in small white capitals separated by dots. Bottom-right: a white rounded badge with a green check mark and two lines of text.",
+ fix:["Replace the jar with the Sperm Worms pouch from Image 2, same size and position.","Use the emoji given in the text lines below instead of the reference emoji."],
+ swaps:["Replace the four columns with four pouches that fill up step by step."],
+ headlines:["TRYING FOR A BABY?"],sub:"YOUR SWIMMERS, WEEK BY WEEK.",callouts:["[Column 1 label] DAY 7","[Column 1 emoji] 🍍","[Column 1 text] Taste improves.","[Column 2 label] WEEK 2","[Column 2 emoji] 💦","[Column 2 text] Bigger loads.","[Column 3 label] MONTH 1","[Column 3 emoji] ⚡","[Column 3 text] More energy.","[Column 4 label] MONTH 3","[Column 4 emoji] 🔥","[Column 4 text] Full-cycle fertility support.","[Ingredients line, bottom-left] ZINC • L-CARNITINE • FOLATE • SELENIUM","[Badge, bottom-right] 2,000+ REVIEWS"]}
+];
+
+const FILE = id => `ads/${id}.jpg`;
+const LIB = id => `https://www.facebook.com/ads/library/?id=${id}`;
+const PX = {"1:1":"1080×1080","4:5":"1080×1350","9:16":"1080×1920"};
+const MODES = {
+  copy:"Short prompt for ChatGPT: makes Image 1 again with our pouch and our words. Attach both images and paste.",
+  twist:"Same idea, new scene: a fresh variation built on what made the reference work.",
+  video:"A shot-by-shot brief for the video version."
+};
+
+ADS.forEach(a=>{ a.score = a.days + 8*(a.versions-1) + 6*(a.imgs.length-1) + (a.live?20:0); });
+ADS.sort((a,b)=>b.score-a.score);
+ADS.forEach((a,i)=>a.rank=i+1);
+
+/* "Made" ticks are saved in this browser only (the Swipe Lab is QA-only, so
+   that's one person). Clearing site data or switching browsers resets them. */
+const MADE_KEY = "swipe-lab-made";
+let made = {};        // adKey -> { at }
+try{ made = JSON.parse(localStorage.getItem(MADE_KEY)||"{}")||{}; }catch(e){ made = {}; }
+function saveMade(){ try{ localStorage.setItem(MADE_KEY, JSON.stringify(made)); }catch(e){} }
+function madeDate(iso){ try{ return new Date(iso).toLocaleDateString(undefined,{day:"numeric",month:"short"}); }catch(e){ return ""; } }
+function showMade(){
+  const m = made[cur.key];
+  $("bMade").textContent = m ? "Unmark as made" : "Mark as made";
+  $("bMadeNote").textContent = m ? `Marked as made on ${madeDate(m.at)}.` : "";
+}
+const state = {brand:"all",fmt:"all",live:false,fit:false};
+
+function stats(){
+  const live = ADS.filter(a=>a.live).length;
+  const longest = Math.max(...ADS.map(a=>a.days));
+  document.getElementById("stats").innerHTML = [
+    [ADS.length,"winning concepts"],[live,"still live today"],[longest+"d","longest run"],[Object.keys(made).length,"remade so far"]
+  ].map(([b,s])=>`<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+function render(){
+  const g = document.getElementById("grid");
+  const list = ADS.filter(a=>(state.brand==="all"||a.brand===state.brand)&&(state.fmt==="all"||a.format===state.fmt)&&(!state.live||a.live)&&(!state.fit||a.fitTag));
+  document.getElementById("count").textContent = `${list.length} of ${ADS.length}`;
+  if(!list.length){g.innerHTML='<div class="empty">No ads match these filters.</div>';return}
+  g.innerHTML = list.map(a=>`
+    <button class="card" data-k="${a.key}" aria-label="Open ${esc(a.title)}">
+      <div class="thumb">
+        <img src="${FILE(a.imgs[0].id)}" alt="" loading="lazy">
+        <span class="rank">#${a.rank}</span>
+        <span class="tags">${a.format==="Video"?`<span class="pill fmt">▶ ${a.dur||"Video"}</span>`:""}${a.live?'<span class="pill live">● Live</span>':'<span class="pill off">Ended</span>'}</span>
+        ${made[a.key]?'<span class="pill made">✓ Made</span>':""}
+      </div>
+      <div class="cbody">
+        <div class="brand">${a.brand} · ${a.format} ${a.ratio}</div>
+        <h3>${esc(a.title)}</h3>
+        <div class="meta"><span><b>${a.days}</b> days</span><span><b>${a.versions}</b> copies</span>${a.imgs.length>1?`<span><b>${a.imgs.length}</b> variants</span>`:""}</div>
+        ${a.fitTag?'<div class="fit">Fits what wins for us</div>':""}
+        ${a.flag?'<div class="flag">Has a don’t-copy note</div>':""}
+      </div>
+    </button>`).join("");
+}
+
+function seg(id,key){
+  document.getElementById(id).addEventListener("click",e=>{
+    const b=e.target.closest("button"); if(!b) return;
+    state[key]=b.dataset.v;
+    [...e.currentTarget.children].forEach(x=>x.setAttribute("aria-pressed",x===b));
+    render();
+  });
+}
+seg("fBrand","brand"); seg("fFmt","fmt");
+document.getElementById("fLive").addEventListener("change",e=>{state.live=e.target.checked;render()});
+document.getElementById("fFit").addEventListener("change",e=>{state.fit=e.target.checked;render()});
+
+let cur=null, curImg=0, mode="copy";
+const $=id=>document.getElementById(id);
+$("grid").addEventListener("click",e=>{const c=e.target.closest(".card"); if(c) open(c.dataset.k)});
+$("scrim").addEventListener("click",close);
+$("dClose").addEventListener("click",close);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("drawer").hidden) close()});
+
+/* the active variant's values, falling back to the ad's */
+const V = k => (cur.imgs[curImg][k]!==undefined ? cur.imgs[curImg][k] : cur[k]);
+const refRatio = () => V("ratio");
+
+function open(k){
+  cur = ADS.find(a=>a.key===k); mode="copy";
+  $("dBrand").textContent = `#${cur.rank} · ${cur.brand} · ran on: ${cur.pages}`;
+  $("dTitle").textContent = cur.title;
+  $("dFacts").innerHTML = [["Days running",cur.days],["Copies",cur.versions],["Dates",`${cur.start} → ${cur.end}`],["Status",cur.live?"Live":"Ended"]]
+    .map(([s,b])=>`<div><span>${s}</span><b>${b}</b></div>`).join("");
+  $("dWhy").textContent = cur.why;
+  $("dFit").textContent = cur.fit; $("dFitSec").hidden=!cur.fit;
+  $("dFlag").textContent = cur.flag||""; $("dFlagSec").hidden=!cur.flag;
+  $("dLinks").innerHTML = cur.imgs.map(v=>`<a href="${LIB(v.id)}" target="_blank" rel="noopener">Open in Ad Library${v.label?` · ${esc(v.label)}`:""} ↗</a>`).join("");
+  $("dVars").innerHTML = cur.imgs.length>1 ? cur.imgs.map((v,i)=>`<button aria-pressed="${i===0}" data-i="${i}" title="${esc(v.label||"")}"><img src="${FILE(v.id)}" alt="${esc(v.label||"variant")}"></button>`).join("") : "";
+  $("builder").hidden = true; $("dMake").hidden = false;
+  $("bVidTab").hidden = cur.format!=="Video";
+  setImg(0);
+  showMade();
+  $("scrim").hidden=false; $("drawer").hidden=false;
+  $("dClose").focus();
+}
+function close(){ $("scrim").hidden=true; $("drawer").hidden=true; }
+
+function fillFields(){
+  const r = refRatio();
+  [...$("bRatio").options].forEach(o=>{ o.textContent = o.textContent.replace(" · same as reference",""); if(o.value===r) o.textContent += " · same as reference"; });
+  $("bRatio").value = r;
+  $("bHead").value = cur.imgs[curImg].headline!==undefined ? cur.imgs[curImg].headline : (cur.headlines[0]||"");
+  $("bSub").value = cur.imgs[curImg].sub!==undefined ? cur.imgs[curImg].sub : (cur.sub||"");
+  $("bCall").value = (V("callouts")||[]).join("\n");
+  const opts = [...new Set([cur.imgs[curImg].headline, ...cur.headlines].filter(Boolean))];
+  $("bHeadOpts").innerHTML = opts.map(h=>`<button type="button">${esc(h)}</button>`).join("");
+}
+function setImg(i){
+  curImg=i; const v=cur.imgs[i];
+  $("dImg").src = FILE(v.id); $("dImg").alt = `${cur.brand} ad: ${cur.title}`;
+  [...$("dVars").children].forEach((b,j)=>b.setAttribute("aria-pressed",j===i));
+  fillFields(); setMode(mode);
+}
+$("dVars").addEventListener("click",e=>{const b=e.target.closest("button"); if(b) setImg(+b.dataset.i)});
+$("dMake").addEventListener("click",()=>{ $("builder").hidden=false; $("dMake").hidden=true; build(); $("builder").scrollIntoView({behavior:"smooth",block:"start"}); });
+["bRatio","bHead","bSub","bCall"].forEach(id=>$(id).addEventListener("input",build));
+$("bHeadOpts").addEventListener("click",e=>{const b=e.target.closest("button"); if(b){$("bHead").value=b.textContent; build();}});
+$("bTabs").addEventListener("click",e=>{const b=e.target.closest("button"); if(b) setMode(b.dataset.v)});
+function setMode(m){
+  if(m==="video" && cur.format!=="Video") m="copy";
+  mode=m; [...$("bTabs").children].forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===m));
+  $("bModeHint").textContent = MODES[m]; build();
+}
+
+/* "[where] text" -> where: "text"; a plain line is just "text" */
+function textLines(){
+  const head=$("bHead").value.trim(), sub=$("bSub").value.trim();
+  const out=[];
+  if(head) out.push(`- Main headline: "${head}"`);
+  if(sub) out.push(`- Line directly under the headline: "${sub}"`);
+  $("bCall").value.split("\n").map(s=>s.trim()).filter(Boolean).forEach(l=>{
+    const m=l.match(/^\[([^\]]+)\]\s*(.+)$/);
+    out.push(m ? `- ${m[1]}: "${m[2]}"` : `- "${l}"`);
+  });
+  return out;
+}
+function sizeLine(ratio){
+  const ref=refRatio();
+  return ratio===ref
+    ? `OUTPUT: ${ratio}, ${PX[ratio]} px, the same shape as Image 1.`
+    : `OUTPUT: ${ratio}, ${PX[ratio]} px. Image 1 is ${ref}: extend or trim the background at the edges to fit, and keep the subject, product and text arrangement identical. Do not recompose.`;
+}
+
+function build(){
+  if(!cur) return;
+  const ratio=$("bRatio").value, text=textLines(), fixes=V("fix")||[], isVid=cur.format==="Video";
+  const textBlock = text.length ? text.join("\n") : "- No text on the image.";
+  const sizeShort = ratio===refRatio()
+    ? `Same size as Image 1 (${ratio}).`
+    : `Make it ${ratio}: extend the background to fit, don't rearrange anything.`;
+  const copy = `Image 1 is an ad from another brand${isVid?" (a frame from a video)":""}. Image 2 is our product, the Sperm Worms pouch.
+
+Recreate Image 1 exactly, but for Sperm Worms. Same layout, framing, pose, background, lighting, colours, fonts and text positions, so it looks like the same ad. Only change this:
+- Swap their product for the Sperm Worms pouch from Image 2, in the same spot and size. Copy the pouch exactly as it looks in Image 2.
+- Swap their text for this, in the same places and styles (only the words in quotes go on the image):
+${textBlock.replace(/^- /gm,"   ")}
+${cur.person?"- Any face becomes a different person with the same look, outfit and pose.\n":""}${fixes.map(f=>"- "+f).join("\n")}${fixes.length?"\n":""}
+${sizeShort}`;
+
+  const twist = `Create a new ${isVid?"opening frame for a ":""}${isVid?"video ad":"static ad"} for Sperm Worms, using Image 1 as the master reference.
+
+Image 1 = a winning ad from another brand. Use its layout, camera angle, lighting, colour blocking and text placement as the blueprint. Do not reuse its brand name, logo, packaging, wording or any real person's face.
+Image 2 = our product, the Sperm Worms pouch. Reproduce it exactly: shape, colours, artwork and label. Never redraw or invent label text.
+
+WHAT IMAGE 1 SHOWS
+${V("scene")}
+
+THE TWIST (the only creative changes)
+${cur.swaps.map(s=>"- "+s).join("\n")}
+- Everything else follows Image 1.
+
+TEXT ON THE IMAGE (only the words inside the quotes appear)
+${textBlock}
+
+RULES
+- Any people are new, fictional adults (21+) who do not look like anyone in Image 1.
+- No nudity and nothing sexually explicit; innuendo only, so it passes Meta ad review.
+- No competitor names, no other brands' logos, no real publication mastheads.
+
+${sizeLine(ratio)}`;
+
+  const vid = `VIDEO REMAKE BRIEF: ${cur.title} (${ratio}, about ${cur.dur||"0:30"})
+
+Reference: Image 1 is a frame from the competitor's winning video (${cur.brand}, ran ${cur.days} days). Match its visual style, pacing, caption style and camera language.
+Image 2 is the Sperm Worms pouch: use it, unchanged, in every product shot.
+
+WHAT THE REFERENCE FRAME SHOWS
+${V("scene")}
+
+CHANGES FROM THE REFERENCE
+${(fixes.length?fixes:["Our product replaces theirs in every shot."]).map(s=>"- "+s).join("\n")}
+
+BEATS
+${(cur.beats||[]).map(b=>"- "+b).join("\n")}
+
+ON-SCREEN TEXT (only the words inside the quotes appear)
+${textBlock}
+
+RULES: new, fictional adults only; no nudity or explicit content; no competitor names or logos; end card shows the pouch, "Boost your boys" and the 30-day money-back guarantee.`;
+
+  $("bOut").value = mode==="twist" ? twist : (mode==="video" ? vid : copy);
+  $("bToast").textContent="";
+}
+$("bCopy").addEventListener("click",()=>{
+  const t=$("bOut").value;
+  const fallback=()=>{ $("bOut").select(); $("bToast").textContent="Press Ctrl/Cmd+C to copy the selected prompt."; };
+  try{ navigator.clipboard.writeText(t).then(()=>{$("bToast").textContent="Copied. Paste it with Image 1 and Image 2 attached."},fallback); }catch(e){ fallback(); }
+});
+$("bMade").addEventListener("click",()=>{
+  if(made[cur.key]) delete made[cur.key]; else made[cur.key] = { at: new Date().toISOString() };
+  saveMade();
+  $("bToast").textContent = made[cur.key] ? "Marked as made." : "Unmarked.";
+  stats(); render(); showMade();
+});
+
+stats(); render();
+</script>
+</body>
+</html>

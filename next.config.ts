@@ -19,6 +19,8 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/admin/reel": ["./assets/reel-fonts/**"],
     "/api/reel/**": ["./assets/reel-fonts/**"],
+    // Swipe Lab page and ad images, served QA-only by /api/swipe-lab/files.
+    "/api/swipe-lab/files/**": ["./assets/swipe-lab/**"],
   },
 };
 
