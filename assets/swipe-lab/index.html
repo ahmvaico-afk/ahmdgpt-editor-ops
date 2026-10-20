@@ -133,6 +133,17 @@ label.f textarea{resize:vertical;min-height:110px;font-family:var(--body)}
   .facts{grid-template-columns:repeat(2,minmax(0,1fr))}
   .steps{grid-template-columns:1fr}
 }
+.sel{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 12px;color:var(--ink);font-size:13.5px}
+.watch{margin-top:28px;display:flex;flex-direction:column;gap:8px}
+.watch h2{font-size:20px;font-weight:800}
+.watch p{margin:0;font-size:13px;color:var(--muted)}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.watch table{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}
+.watch th,.watch td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.watch th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.watch tr:last-child td{border-bottom:0}
+.wt{display:inline-block;font-size:11.5px;font-weight:600;border-radius:999px;padding:1px 8px;margin-right:4px}
+.wt.ok{background:var(--green);color:#fff}.wt.gate{background:var(--accent);color:var(--accent-ink)}.wt.off{background:var(--chip);color:var(--muted)}
 .empty{padding:40px;text-align:center;color:var(--muted);grid-column:1/-1}
 .foot{margin-top:28px;font-size:12.5px;color:var(--muted);max-width:90ch}
 @media (prefers-reduced-motion:reduce){.card{transition:none}.card:hover{transform:none}}
@@ -145,7 +156,7 @@ label.f textarea{resize:vertical;min-height:110px;font-family:var(--body)}
     <div>
       <div class="eyebrow">Competitor winners · Meta Ad Library · pulled 17 Oct 2026</div>
       <h1>Sperm Worms Swipe Lab</h1>
-      <p>The longest-running ads from Lumeo and Primal Storm (including the pages they hide behind), ranked. Open any ad and hit <b>Make it for me</b> to get a ready-to-paste remake prompt: Image 1 is the ad, Image 2 is our pouch.</p>
+      <p>The longest-running ads from Lumeo, Primal Storm and the watchlist brands (Bird &amp; Be, Dr. Squatch, Manscaped, Momentous, Ritual, Beli), ranked. Open any ad and hit <b>Make it for me</b> to get a ready-to-paste remake prompt: Image 1 is the ad, Image 2 is our pouch.</p>
     </div>
     <div class="stats" id="stats"></div>
   </header>
@@ -158,11 +169,7 @@ label.f textarea{resize:vertical;min-height:110px;font-family:var(--body)}
   </section>
 
   <div class="bar" role="toolbar" aria-label="Filters">
-    <div class="seg" id="fBrand" aria-label="Brand">
-      <button aria-pressed="true" data-v="all">All brands</button>
-      <button aria-pressed="false" data-v="Lumeo">Lumeo</button>
-      <button aria-pressed="false" data-v="Primal Storm">Primal Storm</button>
-    </div>
+    <label class="toggle" for="fBrand">Brand <select id="fBrand" class="sel"><option value="all">All brands</option></select></label>
     <div class="seg" id="fFmt" aria-label="Format">
       <button aria-pressed="true" data-v="all">All</button>
       <button aria-pressed="false" data-v="Static">Statics</button>
@@ -176,6 +183,29 @@ label.f textarea{resize:vertical;min-height:110px;font-family:var(--body)}
   <main class="grid" id="grid"></main>
 
   <p class="foot"><b>How the rank works.</b> Score = days the ad ran + 8 per extra copy of the creative + 6 per extra headline/size variant + 20 if it is still live today. Meta doesn’t publish sales, so runtime and duplication are the best public signals that an ad makes money. Most Lumeo ads stopped on 14–16 Sep because Meta took their pages down, not because the ads stopped working; they relaunched on a new page on 23 Sep. Images are copies of the public Ad Library creatives for reference; use “Open in Ad Library” to see the live ad and its full caption.</p>
+  <section class="watch" aria-labelledby="wTitle">
+    <h2 id="wTitle">Watchlist status</h2>
+    <p>Official Meta pages checked in the Ad Library on 20 Oct 2026. ✓ = Meta blue-verified page.</p>
+    <div class="tblwrap"><table>
+      <thead><tr><th>Brand</th><th>Official page (ID)</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Lumeo</td><td>Try Lumeo + shadow pages (Men's Health, Men's Health Insider, Ryan Millers)</td><td><span class="wt ok">In Swipe Lab</span></td></tr>
+        <tr><td>Primal Storm</td><td>Primal Storm, PrimallStorm, The Perf Hub, The Diabetic Man's Daily</td><td><span class="wt ok">In Swipe Lab</span></td></tr>
+        <tr><td>Bird &amp; Be</td><td>The Bird &amp; Be Co. (106076531440592)</td><td><span class="wt ok">In Swipe Lab</span> ~150 ads</td></tr>
+        <tr><td>Dr. Squatch</td><td>Dr. Squatch ✓ (118075261668462)</td><td><span class="wt ok">In Swipe Lab</span> ~570 ads</td></tr>
+        <tr><td>Manscaped</td><td>MANSCAPED ✓ (1545577295743703)</td><td><span class="wt ok">In Swipe Lab</span> ~33 recent ads</td></tr>
+        <tr><td>Momentous</td><td>Momentous, @live.momentous (1448870495145917)</td><td><span class="wt ok">In Swipe Lab</span> ~200 ads</td></tr>
+        <tr><td>Ritual</td><td>Ritual ✓ (706979406105651)</td><td><span class="wt ok">In Swipe Lab</span> ~100 ads</td></tr>
+        <tr><td>Beli</td><td>Beli, @beli.baby (2221409788108262)</td><td><span class="wt ok">In Swipe Lab</span> 2 ads</td></tr>
+        <tr><td>Hims</td><td>hims ✓ (355136938262536)</td><td><span class="wt gate">Age-gated</span> ~640 ads, needs a Facebook login to view</td></tr>
+        <tr><td>Ro / Roman</td><td>Ro ✓ (109333990689139)</td><td><span class="wt gate">Age-gated</span> ~250 ads</td></tr>
+        <tr><td>Hone Health</td><td>Hone Health (103185122001105)</td><td><span class="wt gate">Age-gated</span> ~250 ads</td></tr>
+        <tr><td>Maximus</td><td>Maximus, @maximustribe (107402924190645)</td><td><span class="wt gate">Age-gated</span> ~110 ads</td></tr>
+        <tr><td>Legacy</td><td>Legacy ✓ (892442554236563)</td><td><span class="wt off">No ads running now</span></td></tr>
+        <tr><td>Natalist, Dadi, Obvious, Noverly</td><td>No official page found</td><td><span class="wt off">Not trackable yet</span></td></tr>
+      </tbody>
+    </table></div>
+  </section>
 </div>
 
 <div class="scrim" id="scrim" hidden></div>
@@ -562,7 +592,141 @@ const ADS = [
  scene:"Square, black background. Top: a two-line headline, first line white heavy capitals, second line orange heavy capitals. Below: a full-width band split into four columns shading from light peach (left) to deep orange (right); each column has a white bold label at the top joined to the next by a thin line, a pair of emoji, and two short white lines of text. Bottom-centre: the large product jar on black with orange rim light. Bottom-left: one line of ingredients in small white capitals separated by dots. Bottom-right: a white rounded badge with a green check mark and two lines of text.",
  fix:["Replace the jar with the Sperm Worms pouch from Image 2, same size and position.","Use the emoji given in the text lines below instead of the reference emoji."],
  swaps:["Replace the four columns with four pouches that fill up step by step."],
- headlines:["TRYING FOR A BABY?"],sub:"YOUR SWIMMERS, WEEK BY WEEK.",callouts:["[Column 1 label] DAY 7","[Column 1 emoji] 🍍","[Column 1 text] Taste improves.","[Column 2 label] WEEK 2","[Column 2 emoji] 💦","[Column 2 text] Bigger loads.","[Column 3 label] MONTH 1","[Column 3 emoji] ⚡","[Column 3 text] More energy.","[Column 4 label] MONTH 3","[Column 4 emoji] 🔥","[Column 4 text] Full-cycle fertility support.","[Ingredients line, bottom-left] ZINC • L-CARNITINE • FOLATE • SELENIUM","[Badge, bottom-right] 2,000+ REVIEWS"]}
+ headlines:["TRYING FOR A BABY?"],sub:"YOUR SWIMMERS, WEEK BY WEEK.",callouts:["[Column 1 label] DAY 7","[Column 1 emoji] 🍍","[Column 1 text] Taste improves.","[Column 2 label] WEEK 2","[Column 2 emoji] 💦","[Column 2 text] Bigger loads.","[Column 3 label] MONTH 1","[Column 3 emoji] ⚡","[Column 3 text] More energy.","[Column 4 label] MONTH 3","[Column 4 emoji] 🔥","[Column 4 text] Full-cycle fertility support.","[Ingredients line, bottom-left] ZINC • L-CARNITINE • FOLATE • SELENIUM","[Badge, bottom-right] 2,000+ REVIEWS"]},
+/* ---------------- WATCHLIST: BIRD & BE ---------------- */
+{key:"bb-review-proof",brand:"Bird & Be",title:"Verified-review banner over product",format:"Static",ratio:"9:16",person:false,
+ imgs:[{id:"1625266008571434"}],pages:"The Bird & Be Co.",start:"17 Jun",end:"live",days:126,versions:1,live:true,
+ why:"One hard, specific customer result in a banner (stars, quote, ‘verified customer’), then a clean product shot. Proof does all the selling. Live four months.",
+ fit:"A proof-led fertility angle; ours hasn’t landed yet (Fertility Vitality 0/4). Needs a real review with a real result.",fitTag:false,
+ flag:"Never invent the review or the result. Use a real, documented customer.",
+ scene:"Tall 9:16, plain light warm-grey studio background. Top: a dark teal banner with one short white bold line, and under it a cream box with five dark stars, a three-line quote in bold dark text with quote marks, and a small italic credit line. Centre-bottom: a tall dark teal product box standing upright with a smaller sachet leaning on its right side, soft shadow. Bottom-left: a few colourful capsules on the floor.",
+ fix:["Replace the box and sachet with the Sperm Worms pouch from Image 2 standing upright, same spot and scale.","The capsules on the floor become a few yellow sour pineapple gummy worms."],
+ swaps:["Show the review as a phone screenshot of a real Sperm Worms review instead of a banner."],
+ headlines:["Bigger loads by week 2"],sub:"",callouts:["[Five stars] ★★★★★","[Quote] [paste a real customer review]","[Credit line] – [first name], verified customer"]},
+
+{key:"bb-shelf-ugc",brand:"Bird & Be",title:"Product on the bathroom shelf (UGC)",format:"Video",ratio:"9:16",person:false,
+ imgs:[{id:"1712820219964162"}],pages:"The Bird & Be Co.",start:"29 Jun",end:"live",days:114,versions:1,live:true,dur:"0:33",
+ why:"Phone-shot product on a real bathroom vanity, calm voiceover, word-by-word subtitles. Feels like a friend’s story, not an ad.",
+ fit:"Cheap to shoot. Our UGC is wearing out, so keep this one calm and specific, not hypey.",fitTag:false,
+ scene:"Tall 9:16 phone video frame in a warm-lit bathroom: a glass shelf above a sink with a silver tap at the bottom, patterned wallpaper behind. The product box stands front and centre on the shelf with small items laid in front of it; other boxes blurred behind. White word-by-word subtitle in the lower third.",
+ fix:["Replace the box with the Sperm Worms pouch from Image 2 standing on the shelf, same spot and scale; the small items become a few gummy worms."],
+ swaps:["Shoot it on a nightstand instead, next to a phone and a glass of water."],
+ headlines:["4 a day. That’s the whole routine."],sub:"",callouts:[],
+ beats:["0–3s: slow push-in on the pouch on the shelf; subtitle ‘I never thought about my swimmers until…’","3–15s: a hand takes out 4 gummy worms; VO on what’s inside (zinc, L-carnitine, folate).","15–25s: subtitle ‘Bigger loads by week 2’; the pouch back on the shelf.","25–33s: offer and the 30-day money-back."]},
+
+{key:"bb-microscope",brand:"Bird & Be",title:"Sperm under the microscope 👀",format:"Video",ratio:"9:16",person:false,
+ imgs:[{id:"883325044826729"}],pages:"The Bird & Be Co.",start:"30 Jun",end:"live",days:113,versions:1,live:true,dur:"0:31",
+ why:"Real microscope footage of swimming sperm with one 👀 emoji in the middle. Weird, slightly gross, impossible not to look at.",
+ fit:"An absurd pattern interrupt about exactly what we sell. Pairs well with ‘Your swimmers week by week’.",fitTag:true,
+ scene:"Tall 9:16 full-frame grey microscope footage of many sperm cells swimming in every direction. One large 👀 emoji in the exact centre. No other text.",
+ fix:["Add the Sperm Worms pouch from Image 2, small, in the bottom-right, above the bottom 20%."],
+ swaps:["Split screen: top half slow, sparse swimmers labelled ‘before’; bottom half crowded, fast swimmers labelled ‘after 90 days’."],
+ headlines:["Your swimmers right now 👀"],sub:"",callouts:[],
+ beats:["0–2s: microscope footage + 👀; caption ‘Your swimmers right now 👀’.","2–10s: caption ‘Most guys never check.’","10–22s: cut to the pouch: ‘Zinc, L-carnitine, folate and selenium: what your swimmers run on.’","22–31s: ‘4 sour pineapple gummies a day. 30-day money-back.’"]},
+
+/* ---------------- WATCHLIST: DR. SQUATCH ---------------- */
+{key:"squatch-founder-thanks",brand:"Dr. Squatch",title:"Founder thank-you video",format:"Video",ratio:"4:5",person:true,
+ imgs:[{id:"2295538227304285"}],pages:"Dr. Squatch",start:"22 Jan 2024",end:"live",days:1003,versions:1,live:true,dur:"0:50",
+ why:"The founder on a couch in the office, thanking new customers. Running for almost three years, almost certainly to people who just bought: it cuts refunds and sets up the second order.",
+ fit:"Jeff can film this in an afternoon. Run it to recent buyers, not cold traffic.",fitTag:true,
+ scene:"4:5 interview-style frame. A man in his 30s in a dark green brand t-shirt sits forward on a tan velvet armchair, hands open, talking to camera. Behind him: a softly lit office with a large neon brand sign on a green plant wall. Green rounded caption box with white bold text in the lower third.",
+ fix:["Use our real founder in the same framing. For a mock-up, a new fictional man in a Sperm Worms t-shirt.","The neon sign reads ‘Sperm Worms’."],
+ swaps:["Film it in the warehouse holding a pouch, with boxes going out behind him."],
+ headlines:["Hi, this is Jeff, co-founder of Sperm Worms"],sub:"",callouts:[],
+ beats:["0–5s: ‘Hi, this is Jeff, co-founder of Sperm Worms. Thanks for joining.’","5–20s: how to take them: 4 a day with breakfast, and stick with it.","20–35s: what to expect: day 7, week 2, month 1, month 3.","35–50s: ‘Message us anytime’ + the 30-day money-back. Warm, no hard sell."]},
+
+{key:"squatch-flash-hands",brand:"Dr. Squatch",title:"Hands holding the product + flash-sale banner",format:"Video",ratio:"9:16",person:false,
+ imgs:[{id:"1452371493354280"}],pages:"Dr. Squatch",start:"28 May",end:"live",days:146,versions:3,live:true,dur:"0:25",
+ why:"Top-down phone shot of hands holding the product on a wood table, a loud yellow sale banner and a ‘NEW CUSTOMER ONLY’ sticker. Pure offer, no story, three copies running.",
+ fit:"Offer-led product shot. Ready-made for the Halloween 20% off.",fitTag:true,
+ scene:"Tall 9:16 top-down phone shot of a light wood table. Two hands hold the product in the middle. Upper third: a yellow rounded banner with two lines of heavy black capitals. On the product’s right: a black rounded sticker with three lines of yellow capitals between two siren emoji.",
+ fix:["The hands hold the Sperm Worms pouch from Image 2, label to camera, with a few gummy worms on the table."],
+ swaps:["Pour the gummy worms out onto the table in slow motion."],
+ headlines:["HALLOWEEN SALE: ACT FAST"],sub:"20% OFF YOUR FIRST POUCH",callouts:["[Black sticker with siren emoji] 🚨 ENDS 31 OCT 🚨"],
+ beats:["0–3s: hands bring the pouch into frame; the banner pops.","3–12s: tear it open, pour gummy worms on the table.","12–20s: text pops: 4 a day · zinc + L-carnitine · sour pineapple.","20–25s: sticker + ‘Shop now’."]},
+
+{key:"squatch-gift-stack",brand:"Dr. Squatch",title:"Lifestyle product stack + deal headline",format:"Static",ratio:"9:16",person:false,
+ imgs:[{id:"994955236584565"}],pages:"Dr. Squatch",start:"28 May",end:"live",days:146,versions:2,live:true,
+ why:"A sunlit living-room shot of the whole bundle, a three-word headline and a price bubble. Feels like a friend’s place, reads like a deal.",
+ fit:"Bundle-offer static for a multi-pouch subscription.",fitTag:true,
+ flag:"Only promise discounts and gifts you actually run.",
+ scene:"Tall 9:16 lifestyle photo: a wooden table in warm golden-hour light, a TV showing a city skyline behind. On the table: a stack of product boxes, a toiletry bag and a soap dish. Upper-middle: a short headline in huge bold white capitals. Right: a white speech-bubble badge with a percentage. Lower-middle: a white strip with two lines of small black text and check-mark emoji.",
+ fix:["Replace the boxes and bag with three Sperm Worms pouches from Image 2 standing in a row, plus a small pile of gummy worms."],
+ swaps:["Put the pouches on a nightstand at night, lamp on."],
+ headlines:["YO, 30% OFF"],sub:"",callouts:["[White speech bubble] SAVE 30%","[White strip, line 1] ✅ SUBSCRIBE & SAVE: CANCEL ANYTIME ✅","[White strip, line 2] 3 POUCHES · 90 DAYS · 30-DAY MONEY-BACK"]},
+
+{key:"squatch-bundle-grid",brand:"Dr. Squatch",title:"Product grid + red badges",format:"Video",ratio:"1:1",person:false,
+ imgs:[{id:"1541863690982441"}],pages:"Dr. Squatch",start:"28 May",end:"live",days:146,versions:2,live:true,dur:"0:09",
+ why:"Everything you get, laid out on white, with fat red badges on the extras. A 9-second offer explainer.",
+ fit:"Shows the subscription value at a glance.",fitTag:false,
+ flag:"Badges only for things the offer really includes.",
+ scene:"Square, plain white. Left half: a 2×3 grid of product boxes with two deodorant sticks below. Right half: three items, each with a big red rounded badge in heavy white capitals, tilted slightly. Bottom-right: a hand holding a small item.",
+ fix:["Left: three Sperm Worms pouches from Image 2 in a row with a pile of gummy worms in front.","Right: three red badges with the text below, no other items."],
+ swaps:["Make it a 3-month calendar, one pouch per month."],
+ headlines:[""],sub:"",callouts:["[Red badge 1] SAVE 30%","[Red badge 2] CANCEL ANYTIME","[Red badge 3] 30-DAY MONEY-BACK"],
+ beats:["0–3s: pouches drop in one by one.","3–6s: the red badges slap on.","6–9s: ‘Subscribe & save. Shop now.’"]},
+
+/* ---------------- WATCHLIST: MANSCAPED ---------------- */
+{key:"manscaped-feature-ring",brand:"Manscaped",title:"Product hero + feature circles",format:"Static",ratio:"9:16",person:false,
+ imgs:[{id:"1063947699750926"}],pages:"MANSCAPED",start:"1 Oct",end:"live",days:20,versions:2,live:true,
+ why:"Premium dark gradient, the product dead-centre, six round close-up photos with labels around it. Explains the product in one look. Only 20 days old, but already duplicated.",
+ fit:"Ingredient explainer: one circle per ingredient. Product hero is our 2nd-best format (13%).",fitTag:true,
+ scene:"Tall 9:16, smooth dark grey-to-beige gradient. Top: the product name in bold white condensed capitals with a thin divider and a small tag on the right, a small subtitle under it. Centre: the product standing upright, large. Left and right columns: three round close-up photos each, with a short white label under every circle.",
+ fix:["Replace the product with the Sperm Worms pouch from Image 2, upright, same size.","Circles show: zinc crystals, a gummy worm close-up, a pineapple slice, a sperm-cell illustration, sugar crystals, and the pouch’s cartoon worm."],
+ swaps:["Use a bright pineapple-yellow gradient instead of grey."],
+ headlines:["SPERM WORMS"],sub:"Daily Performance Gummy",callouts:["[Small tag, top-right] 4 A DAY","[Left circle 1 label] Zinc","[Left circle 2 label] L-Carnitine","[Left circle 3 label] Folate","[Right circle 1 label] Selenium","[Right circle 2 label] Vitamins D3 + E","[Right circle 3 label] Sour Pineapple"]},
+
+/* ---------------- WATCHLIST: RITUAL ---------------- */
+{key:"ritual-glass-hero",brand:"Ritual",title:"Premium product on coloured glass",format:"Static",ratio:"1:1",person:false,
+ imgs:[{id:"851485810542693"}],pages:"Ritual",start:"23 Apr",end:"live",days:181,versions:1,live:true,
+ why:"Studio shot of a translucent bottle on amber acrylic blocks, two capsules beside it, no text. Pure premium feel; six months live.",
+ fit:"A premium hero to balance our jokey ads. Good for retargeting.",fitTag:false,
+ scene:"Square studio photo in warm amber-yellow light. Tall translucent amber acrylic panels and blocks at angles, glossy reflective floor. Centre: the product bottle upright with a strong reflection below. Two capsules stand to its right. No text.",
+ fix:["Replace the bottle with the Sperm Worms pouch from Image 2, upright, same spot; the capsules become two yellow sugar-coated gummy worms.","Tint the acrylic pineapple-yellow and holographic blue to match the pouch."],
+ swaps:["Same set, but gummy worms hang off the acrylic edges like they’re climbing."],
+ headlines:[""],sub:"",callouts:[]},
+
+/* ---------------- WATCHLIST: MOMENTOUS ---------------- */
+{key:"momentous-texture-flatlay",brand:"Momentous",title:"Product lying in its own ingredient",format:"Video",ratio:"9:16",person:false,
+ imgs:[{id:"987135380786844"}],pages:"Momentous",start:"24 Jun",end:"live",days:119,versions:5,live:true,dur:"0:15",
+ why:"Top-down shot of the tub lying in a bed of its own powder, warm side light. Simple, tactile, premium. Five copies running.",
+ fit:"The pouch in a bed of sour sugar and gummy worms. Product hero, our 2nd-best format.",fitTag:true,
+ scene:"Tall 9:16 top-down close-up. The whole background is a textured bed of coarse sandy-brown powder. The white product tub lies diagonally across the centre, lit by warm orange light from the left. No text.",
+ fix:["The tub becomes the Sperm Worms pouch from Image 2 lying flat at the same angle; the powder bed becomes sparkling sour sugar crystals with yellow gummy worms half-buried."],
+ swaps:["Bed of crushed pineapple instead of sugar."],
+ headlines:["Sour pineapple. Serious nutrients."],sub:"",callouts:[],
+ beats:["0–5s: slow top-down push-in on the pouch in the sugar.","5–10s: a hand pulls out one gummy worm, sugar falling off.","10–15s: end text ‘Sour pineapple. Serious nutrients. 4 a day.’"]},
+
+{key:"momentous-expert",brand:"Momentous",title:"Expert interview with name lower-third",format:"Video",ratio:"9:16",person:true,
+ imgs:[{id:"1961120154541293"}],pages:"Momentous",start:"24 Jun",end:"live",days:119,versions:3,live:true,dur:"0:31",
+ why:"A credible expert, interview-lit, with name and title on screen. Borrowed authority without a lab coat.",
+ fit:"Our ‘Authority intro’ hook is ‘doing well’ in Foundry. Use one of the doctors who formulated Sperm Worms.",fitTag:true,
+ flag:"Only a real doctor who worked on the formula, with their permission.",
+ scene:"Tall 9:16 documentary interview frame. A man in his 30s in a dark navy button-down shirt sits by a large window with green trees outside, looking just off-camera. Lower-left: his name in bold white and two lines of white title text. A white subtitle line below.",
+ fix:["Use our real formulating doctor. For a mock-up, a new fictional man in a navy shirt."],
+ swaps:["Interview him in a lab coat in a real clinic instead."],
+ headlines:["[Doctor’s real name]"],sub:"",callouts:["[Title under the name] Co-formulator, Sperm Worms","[Subtitle] Zinc and L-carnitine are the two I’d never skip."],
+ beats:["0–3s: name card; ‘We’ve known these nutrients matter for years…’","3–15s: why zinc, L-carnitine and folate, in plain words.","15–25s: why a gummy: guys actually take it.","25–31s: pouch end card + 30-day money-back."]},
+
+{key:"momentous-scatter-fact",brand:"Momentous",title:"Scattered product + one bold fact",format:"Static",ratio:"9:16",person:false,
+ imgs:[{id:"4603634353192675"}],pages:"Momentous",start:"24 Jun",end:"live",days:119,versions:2,live:true,
+ why:"Sachets scattered on white with a powder spill, one bold fact on the left and a Shop Now button. Reads like a magazine ad.",
+ fit:"Fact-led. Uses the stat already on our site.",fitTag:false,
+ scene:"Tall 9:16, white surface. Product sachets scattered diagonally around the right side and edges, one torn open with powder spilling out. Small brand name top-left. Left-middle: a four-line statement in black sans-serif, the last two lines bold. Below it: a rounded outline button.",
+ fix:["The sachets become Sperm Worms pouches from Image 2, scattered at angles, one torn open with gummy worms and sugar spilling out."],
+ swaps:["Use one big pouch instead of a scatter."],
+ headlines:["Sperm counts have dropped 60% in 50 years."],sub:"Zinc and L-carnitine help support yours.",callouts:["[Small brand name, top-left] Sperm Worms","[Button] Shop Now"]},
+
+/* ---------------- WATCHLIST: BELI ---------------- */
+{key:"beli-retail",brand:"Beli",title:"Hand holding the product in a store aisle",format:"Static",ratio:"4:5",person:false,
+ imgs:[{id:"1444571063683179"}],pages:"Beli",start:"10 Feb",end:"live",days:253,versions:1,live:true,
+ why:"A hand holds the bottle up in front of a real supplement shelf, with a ‘now in stores’ badge. Retail presence is instant trust. 253 days live.",
+ fit:"Only if Sperm Worms is really in a store. If not, use the same shot for ‘back in stock’.",fitTag:false,
+ flag:"Never claim a retailer you aren’t in.",
+ scene:"4:5 phone photo in a store’s supplement aisle, shelves of bottles blurred behind. A woman’s hand with red nails holds the product up in the centre. Upper-left: a white rounded badge with a small line of text and a big green store logo.",
+ fix:["The hand holds the Sperm Worms pouch from Image 2, label to camera.","The badge shows only the text below, no store logo."],
+ swaps:["A man’s hand pulling the last pouch off the shelf."],
+ headlines:["BACK IN STOCK"],sub:"",callouts:["[Small line above the headline] Sold out twice."]}
 ];
 
 const FILE = id => `ads/${id}.jpg`;
@@ -632,7 +796,7 @@ function seg(id,key){
     render();
   });
 }
-seg("fBrand","brand"); seg("fFmt","fmt");
+(()=>{const sel=document.getElementById("fBrand"); [...new Set(ADS.map(a=>a.brand))].sort().forEach(b=>{const o=document.createElement("option"); o.value=b; o.textContent=`${b} (${ADS.filter(a=>a.brand===b).length})`; sel.appendChild(o);}); sel.addEventListener("change",e=>{state.brand=e.target.value; render();});})(); seg("fFmt","fmt");
 document.getElementById("fLive").addEventListener("change",e=>{state.live=e.target.checked;render()});
 document.getElementById("fFit").addEventListener("change",e=>{state.fit=e.target.checked;render()});
 
