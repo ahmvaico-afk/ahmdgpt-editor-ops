@@ -1,24 +1,29 @@
 import type { Metadata } from "next";
-import { Syne, Inter, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { GrainOverlay } from "@/components/grain-overlay";
 import "./globals.css";
 
-const syne = Syne({
+/*
+ * Self-hosted variable fonts (OFL, from Fontsource) rather than next/font/google:
+ * Turbopack's Google Fonts download fails at random during builds, which was
+ * failing deploys. Committed files can't fail to download.
+ */
+const syne = localFont({
+  src: "../fonts/syne-latin-variable.woff2",
   variable: "--font-display-raw",
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
+  weight: "400 800",
 });
 
-const inter = Inter({
+const inter = localFont({
+  src: "../fonts/inter-latin-variable.woff2",
   variable: "--font-sans-raw",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: "100 900",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const jetbrainsMono = localFont({
+  src: "../fonts/jetbrains-mono-latin-variable.woff2",
   variable: "--font-mono-raw",
-  subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: "100 800",
 });
 
 export const metadata: Metadata = {

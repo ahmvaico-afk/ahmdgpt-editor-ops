@@ -98,9 +98,9 @@ export function RulesAdminClient() {
       <div>
         <h1 className="font-display text-2xl font-extrabold text-text">Client Rules</h1>
         <p className="mt-1 text-sm text-muted">
-          {activeCount} rule{activeCount === 1 ? "" : "s"} live. Editors pick AI UGC ad or B-roll video
-          when they submit, and have to tick every live rule for that kind of ad. When the client sends a revision, add it here once and
-          nobody makes that mistake again.
+          {activeCount} rule{activeCount === 1 ? "" : "s"} live. Every brief checklist includes the live
+          rules for its kind of ad (AI UGC or B-roll). When the client sends a revision, add it here once
+          and it&rsquo;s on every checklist from then on.
         </p>
       </div>
 

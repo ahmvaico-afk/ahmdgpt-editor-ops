@@ -7,25 +7,26 @@
  * widening the global layout's Inter keeps the extra weights on the one page
  * that needs them.
  */
-import { Inter, JetBrains_Mono, Montserrat, Syne } from "next/font/google";
 import localFont from "next/font/local";
 import type { HookFontKey } from "./spec";
 
-const hookSans = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
+// Variable fonts committed under src/fonts — see the note in app/layout.tsx on
+// why these aren't fetched from Google at build time.
+const hookSans = localFont({
+  src: "../../fonts/inter-latin-variable.woff2",
+  weight: "100 900",
   display: "block",
 });
 
-const hookDisplay = Syne({
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
+const hookDisplay = localFont({
+  src: "../../fonts/syne-latin-variable.woff2",
+  weight: "400 800",
   display: "block",
 });
 
-const hookMono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "700", "800"],
+const hookMono = localFont({
+  src: "../../fonts/jetbrains-mono-latin-variable.woff2",
+  weight: "100 800",
   display: "block",
 });
 
@@ -34,9 +35,9 @@ const hookMono = JetBrains_Mono({
  * geometric-sans family tree, and free to redistribute — so the picker always
  * has something in that shape even without an Adobe licence.
  */
-const hookGeometric = Montserrat({
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "800", "900"],
+const hookGeometric = localFont({
+  src: "../../fonts/montserrat-latin-variable.woff2",
+  weight: "100 900",
   display: "block",
 });
 
