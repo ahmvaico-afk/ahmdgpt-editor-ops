@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AddVideoModal } from "@/components/portal/add-video-modal";
 import { WorkTimer } from "@/components/portal/work-timer";
+import { MyChecklists } from "@/components/briefs/my-checklists";
 import { EditSubmissionModal } from "@/components/edit-submission-modal";
 import type { EditorSummary, Style, Submission } from "@/lib/types";
 
@@ -72,12 +73,12 @@ export function DashboardClient({
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-6 py-8">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
           <p className="font-mono text-[11px] uppercase tracking-wider text-muted">
             Welcome back
           </p>
-          <h1 className="font-display text-2xl font-extrabold text-text">{editorName}</h1>
+          <h1 className="truncate font-display text-2xl font-extrabold text-text">{editorName}</h1>
           {batchData && (
             <p className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted">
               <span className="status-dot" />
@@ -85,56 +86,74 @@ export function DashboardClient({
             </p>
           )}
         </div>
-        <div className="flex items-center gap-3">
-          {isQa && (
-            <Link
-              href={`/portal/${editorCode}/qa`}
-              className="rounded-full bg-gold/15 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-gold transition-colors hover:bg-gold/25"
-            >
-              QA Review
-            </Link>
-          )}
-          {isQa && (
-            <Link
-              href={`/portal/${editorCode}/swipe-lab`}
-              className="rounded-full bg-gold/15 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-gold transition-colors hover:bg-gold/25"
-            >
-              Swipe Lab
-            </Link>
-          )}
-          <Link
-            href={`/portal/${editorCode}/meters`}
-            className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
-          >
-            Meters
-          </Link>
-          <Link
-            href={`/portal/${editorCode}/hook-tool`}
-            className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
-          >
-            Hook Text
-          </Link>
-          <Link
-            href={`/portal/${editorCode}/news-text`}
-            className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
-          >
-            News Text
-          </Link>
-          <Link
-            href={`/portal/${editorCode}/leaderboard`}
-            className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
-          >
-            Leaderboard
-          </Link>
-          <Link
-            href={`/portal/${editorCode}/invoice`}
-            className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
-          >
-            Generate Invoice
-          </Link>
-          <Button onClick={() => setModalOpen(true)}>+ Add Video</Button>
-        </div>
+        <Button onClick={() => setModalOpen(true)} className="shrink-0">
+          + Add Video
+        </Button>
       </div>
+
+      {/* Its own row so the tools never crowd the name or wrap mid-label. */}
+      <nav className="-mt-2 flex flex-wrap items-center gap-x-5 gap-y-2 whitespace-nowrap">
+        {isQa && (
+          <Link
+            href={`/portal/${editorCode}/qa`}
+            className="rounded-full bg-gold/15 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-gold transition-colors hover:bg-gold/25"
+          >
+            QA Review
+          </Link>
+        )}
+        {isQa && (
+          <Link
+            href={`/portal/${editorCode}/briefs`}
+            className="rounded-full bg-gold/15 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-gold transition-colors hover:bg-gold/25"
+          >
+            Briefs
+          </Link>
+        )}
+        {isQa && (
+          <Link
+            href={`/portal/${editorCode}/swipe-lab`}
+            className="rounded-full bg-gold/15 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-gold transition-colors hover:bg-gold/25"
+          >
+            Swipe Lab
+          </Link>
+        )}
+        <Link
+          href={`/portal/${editorCode}/rules`}
+          className="rounded-full bg-accent/15 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-accent transition-colors hover:bg-accent/25"
+        >
+          Client Rules
+        </Link>
+        <Link
+          href={`/portal/${editorCode}/meters`}
+          className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
+        >
+          Meters
+        </Link>
+        <Link
+          href={`/portal/${editorCode}/hook-tool`}
+          className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
+        >
+          Hook Text
+        </Link>
+        <Link
+          href={`/portal/${editorCode}/news-text`}
+          className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
+        >
+          News Text
+        </Link>
+        <Link
+          href={`/portal/${editorCode}/leaderboard`}
+          className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
+        >
+          Leaderboard
+        </Link>
+        <Link
+          href={`/portal/${editorCode}/invoice`}
+          className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
+        >
+          Generate Invoice
+        </Link>
+      </nav>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard label="This month" value={formatCents(summary?.thisMonth.totalCents ?? 0)} />
@@ -155,6 +174,8 @@ export function DashboardClient({
       {/* Sits above everything else: a timer you can't see is a timer you
           forget to stop, and forgotten timers wreck the meter maths. */}
       <WorkTimer />
+
+      <MyChecklists />
 
       {personalStats && personalStats.currentStreak >= 1 && (
         <StreakBar streak={personalStats.currentStreak} />

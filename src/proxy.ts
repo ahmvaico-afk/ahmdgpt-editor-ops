@@ -9,7 +9,7 @@ export async function proxy(request: NextRequest) {
   // Every admin page that isn't the login itself. Pages also guard themselves,
   // but keeping this list current means an unauthenticated hit never renders.
   const adminMatch = pathname.match(
-    /^\/admin\/(dashboard|styles|editors|reel|totals|invoices|leaderboard|meters|work-time|covers|applicants)/
+    /^\/admin\/(dashboard|styles|editors|reel|totals|invoices|leaderboard|meters|work-time|covers|applicants|rules|briefs)/
   );
   if (adminMatch) {
     if (!session || session.role !== "admin") {
@@ -18,7 +18,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const portalMatch = pathname.match(/^\/portal\/([^/]+)\/(dashboard|invoice|leaderboard|swipe-lab)/);
+  const portalMatch = pathname.match(/^\/portal\/([^/]+)\/(dashboard|invoice|leaderboard|swipe-lab|rules|briefs)/);
   if (portalMatch) {
     const editorCode = decodeURIComponent(portalMatch[1]).toLowerCase();
     if (!session || session.role !== "editor" || session.editorCode !== editorCode) {

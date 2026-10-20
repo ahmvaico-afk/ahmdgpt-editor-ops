@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { AD_TYPES, RULE_SCOPES } from "@/lib/ad-types";
+import { briefItemSchema } from "@/lib/briefs-schema";
 
 export const editorLoginSchema = z.object({
   editorCode: z.string().trim().min(1).max(64),
@@ -20,6 +22,46 @@ export const createSubmissionSchema = z.object({
   notes: z.string().trim().max(2000).optional().or(z.literal("")),
   /// Optional: timed work the editor logged before this record existed.
   workItemId: z.string().min(1).max(64).optional(),
+});
+
+export const createClientRuleSchema = z.object({
+  category: z.string().trim().min(1).max(60),
+  text: z.string().trim().min(1).max(300),
+  detail: z.string().trim().max(1000).optional().or(z.literal("")),
+  source: z.string().trim().max(200).optional().or(z.literal("")),
+  appliesTo: z.enum(RULE_SCOPES).default("all"),
+});
+
+export const updateClientRuleSchema = z.object({
+  category: z.string().trim().min(1).max(60).optional(),
+  text: z.string().trim().min(1).max(300).optional(),
+  detail: z.string().trim().max(1000).optional().or(z.literal("")),
+  source: z.string().trim().max(200).optional().or(z.literal("")),
+  appliesTo: z.enum(RULE_SCOPES).optional(),
+  active: z.boolean().optional(),
+  sortOrder: z.number().int().optional(),
+});
+
+export const draftBriefSchema = z.object({
+  adType: z.enum(AD_TYPES),
+  brief: z.string().trim().max(30000).default(""),
+});
+
+export const createBriefSchema = z.object({
+  title: z.string().trim().min(1, "Give the video a name.").max(200),
+  adType: z.enum(AD_TYPES),
+  brief: z.string().trim().max(30000).default(""),
+  editorId: z.string().max(64).optional().or(z.literal("")),
+  items: z.array(briefItemSchema).min(1, "The checklist is empty.").max(80),
+});
+
+export const toggleChecklistItemSchema = z.object({
+  itemId: z.string().min(1).max(64),
+  checked: z.boolean(),
+});
+
+export const updateRuleSettingsSchema = z.object({
+  minLoudnessLufs: z.number().min(-40).max(0),
 });
 
 export const updateSubmissionSchema = z.object({

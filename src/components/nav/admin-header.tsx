@@ -11,6 +11,8 @@ const LINKS = [
   { href: "/admin/leaderboard", label: "Leaderboard" },
   { href: "/admin/meters", label: "Meters" },
   { href: "/admin/work-time", label: "Time" },
+  { href: "/admin/briefs", label: "Briefs" },
+  { href: "/admin/rules", label: "Rules" },
   { href: "/admin/styles", label: "Styles" },
   { href: "/admin/editors", label: "Editors" },
   { href: "/admin/applicants", label: "Hiring" },

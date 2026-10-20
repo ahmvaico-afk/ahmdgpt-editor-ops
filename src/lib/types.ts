@@ -36,6 +36,17 @@ export interface Submission {
   editor?: { name: string; editorCode: string };
 }
 
+export interface ClientRule {
+  id: string;
+  category: string;
+  text: string;
+  detail: string | null;
+  source: string | null;
+  appliesTo: string;
+  active: boolean;
+  sortOrder: number;
+}
+
 export interface BatchInfo {
   number: number;
   count: number;

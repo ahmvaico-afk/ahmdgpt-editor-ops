@@ -30,7 +30,7 @@ enum ApplicantStatus {
 /// An editor applying through the public /apply page shared on stories.
 /// Deliberately not linked to Editor — most of these never become one.
 model Applicant {
-  id       String @id @default(uuid())
+  id       String  @id @default(uuid())
   name     String
   whatsapp String
   city     String?
@@ -66,7 +66,7 @@ model Applicant {
   expectedPayPkr String?
   /// How long they spent on the form. Under half a minute means they didn't
   /// read a word of it.
-  secondsTaken    Int     @default(0)
+  secondsTaken   Int     @default(0)
 
   /// Sorted out of the main pile automatically — see `screenApplicant`.
   /// `filterReason` is the plain-English why, shown to the owner.
@@ -93,39 +93,40 @@ enum WorkItemStatus {
 }
 
 model Editor {
-  id          String            @id @default(uuid())
-  name        String
-  editorCode  String            @unique
-  pinHash     String
-  active      Boolean           @default(true)
+  id              String            @id @default(uuid())
+  name            String
+  editorCode      String            @unique
+  pinHash         String
+  active          Boolean           @default(true)
   /// Promoted to QA by the owner from the Editors tab. Lets this editor review
   /// everyone else's work — log revisions, approve videos, sign off logged time
   /// — but never their own, and never anything to do with money.
-  isQa        Boolean           @default(false)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  submissions  VideoSubmission[]
-  hookPresets  HookPreset[]
-  workItems    WorkItem[]
+  isQa            Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  submissions     VideoSubmission[]
+  hookPresets     HookPreset[]
+  workItems       WorkItem[]
+  briefChecklists BriefChecklist[]
 }
 
 /// A saved hook-text style for the overlay tool in the editor portal.
 model HookPreset {
-  id   String  @id @default(uuid())
-  name String
+  id            String   @id @default(uuid())
+  name          String
   /// The built-in house style. Exactly one row carries this, and it is
   /// read-only for everyone — editors duplicate it rather than edit it.
-  isDefault Boolean @default(false)
+  isDefault     Boolean  @default(false)
   /// Null means global (the default, visible to every editor). Otherwise the
   /// preset belongs to that editor and only they can see or change it.
   ownerEditorId String?
-  owner         Editor? @relation(fields: [ownerEditorId], references: [id], onDelete: Cascade)
+  owner         Editor?  @relation(fields: [ownerEditorId], references: [id], onDelete: Cascade)
   /// Whole HookConfig blob — see lib/hook/spec.ts. Stored loose on purpose so
   /// adding a style token doesn't need a migration; normalizeConfig backfills
   /// anything an older preset predates.
-  config    Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  config        Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([ownerEditorId])
 }
@@ -213,24 +214,24 @@ model Revision {
 /// starts the clock, and only adds the record — with its duration — once the
 /// work is done. Survives revision rounds, accumulating spans each time.
 model WorkItem {
-  id           String           @id @default(uuid())
-  editorId     String
-  editor       Editor           @relation(fields: [editorId], references: [id], onDelete: Cascade)
+  id             String           @id @default(uuid())
+  editorId       String
+  editor         Editor           @relation(fields: [editorId], references: [id], onDelete: Cascade)
   /// What the editor called it when they started, e.g. "Rosabella #2".
-  label        String
+  label          String
   /// Set when the editor finally adds the video and attaches this work.
   /// Unique: one piece of tracked work belongs to at most one video.
-  submissionId String?          @unique
-  submission   VideoSubmission? @relation(fields: [submissionId], references: [id], onDelete: SetNull)
-  status       WorkItemStatus   @default(working)
-  finishedAt   DateTime?
+  submissionId   String?          @unique
+  submission     VideoSubmission? @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+  status         WorkItemStatus   @default(working)
+  finishedAt     DateTime?
   /// QA's sign-off that the logged time is honest. Only approved time feeds
   /// the leaderboard — the clock is self-reported, so it needs a second pair
   /// of eyes before it can move money.
   timeApprovedAt DateTime?
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  sessions     WorkSession[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  sessions       WorkSession[]
 
   @@index([editorId])
   @@index([status])
@@ -254,6 +255,60 @@ model WorkSession {
 
 /// Singleton row (id is always "singleton") holding admin-controlled app state, currently just the active batch counter.
 model AppSettings {
-  id           String @id @default("singleton")
-  currentBatch Int    @default(1)
+  id              String @id @default("singleton")
+  currentBatch    Int    @default(1)
+  /// Quietest an export may be and still be submitted. The client wants audio
+  /// maxed out so ads stay loud on a phone turned down.
+  minLoudnessLufs Float  @default(-12)
+}
+
+/// One thing the client has told us off for, written as a yes/no check.
+/// Editors must tick every active rule before a video can be submitted, so a
+/// revision note only has to be given once.
+model ClientRule {
+  id        String   @id @default(uuid())
+  /// Groups the checklist, e.g. "Story & casting", "Audio".
+  category  String
+  /// The check itself, phrased so "yes" means the video is fine.
+  text      String
+  /// Optional longer why/how, shown under the check.
+  detail    String?
+  /// Where it came from, e.g. "Xanth · 1.15 revision · 19 Oct".
+  source    String?
+  /// "all", or only one kind of ad: "ugc" / "broll". See lib/ad-types.ts.
+  appliesTo String   @default("all")
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active])
+}
+
+/// A checklist QA builds from a concept brief and sends to an editor when the
+/// video is assigned — before any editing, unlike logging a video, which
+/// editors do after QA approves it.
+model BriefChecklist {
+  id        String   @id @default(uuid())
+  /// Unguessable code in the share link, /checklist/<code>. The link is the
+  /// access: editors open it from WhatsApp without logging in.
+  code      String   @unique
+  title     String
+  /// "ugc" or "broll" — picks which standing rules were included.
+  adType    String
+  brief     String
+  /// [{ id, category, text, detail, from: "rule" | "brief" | "manual" }].
+  /// A snapshot, so editing a rule later doesn't change a checklist already sent.
+  items     Json
+  /// Ids of the items the editor has ticked.
+  checked   Json     @default("[]")
+  editorId  String?
+  editor    Editor?  @relation(fields: [editorId], references: [id], onDelete: SetNull)
+  /// Who built it, for the list.
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([editorId])
+  @@index([createdAt])
 }
