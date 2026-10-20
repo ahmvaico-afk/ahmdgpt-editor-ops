@@ -156,7 +156,7 @@ label.f textarea{resize:vertical;min-height:110px;font-family:var(--body)}
     <div>
       <div class="eyebrow">Competitor winners · Meta Ad Library · pulled 17 Oct 2026</div>
       <h1>Sperm Worms Swipe Lab</h1>
-      <p>The longest-running ads from Lumeo, Primal Storm and the watchlist brands (Bird &amp; Be, Dr. Squatch, Manscaped, Momentous, Ritual, Beli), ranked. Open any ad and hit <b>Make it for me</b> to get a ready-to-paste remake prompt: Image 1 is the ad, Image 2 is our pouch.</p>
+      <p>The longest-running ads from Lumeo, Primal Storm and the watchlist brands (Hims, Ro, Hone Health, Maximus, Bird &amp; Be, Dr. Squatch, Manscaped, Momentous, Ritual, Beli), ranked. Open any ad and hit <b>Make it for me</b> to get a ready-to-paste remake prompt: Image 1 is the ad, Image 2 is our pouch.</p>
     </div>
     <div class="stats" id="stats"></div>
   </header>
@@ -197,10 +197,10 @@ label.f textarea{resize:vertical;min-height:110px;font-family:var(--body)}
         <tr><td>Momentous</td><td>Momentous, @live.momentous (1448870495145917)</td><td><span class="wt ok">In Swipe Lab</span> ~200 ads</td></tr>
         <tr><td>Ritual</td><td>Ritual ✓ (706979406105651)</td><td><span class="wt ok">In Swipe Lab</span> ~100 ads</td></tr>
         <tr><td>Beli</td><td>Beli, @beli.baby (2221409788108262)</td><td><span class="wt ok">In Swipe Lab</span> 2 ads</td></tr>
-        <tr><td>Hims</td><td>hims ✓ (355136938262536)</td><td><span class="wt gate">Age-gated</span> ~640 ads, needs a Facebook login to view</td></tr>
-        <tr><td>Ro / Roman</td><td>Ro ✓ (109333990689139)</td><td><span class="wt gate">Age-gated</span> ~250 ads</td></tr>
-        <tr><td>Hone Health</td><td>Hone Health (103185122001105)</td><td><span class="wt gate">Age-gated</span> ~250 ads</td></tr>
-        <tr><td>Maximus</td><td>Maximus, @maximustribe (107402924190645)</td><td><span class="wt gate">Age-gated</span> ~110 ads</td></tr>
+        <tr><td>Hims</td><td>hims ✓ (355136938262536)</td><td><span class="wt ok">In Swipe Lab</span> ~640 ads (ED + hair; sexual-health picks)</td></tr>
+        <tr><td>Ro / Roman</td><td>Ro ✓ (109333990689139)</td><td><span class="wt ok">In Swipe Lab</span> ~240 ads (mostly GLP-1; Ro Sparks picks)</td></tr>
+        <tr><td>Hone Health</td><td>Hone Health (103185122001105)</td><td><span class="wt ok">In Swipe Lab</span> ~250 ads</td></tr>
+        <tr><td>Maximus</td><td>Maximus, @maximustribe (107402924190645)</td><td><span class="wt ok">In Swipe Lab</span> ~110 ads, all under 3 weeks old</td></tr>
         <tr><td>Legacy</td><td>Legacy ✓ (892442554236563)</td><td><span class="wt off">No ads running now</span></td></tr>
         <tr><td>Natalist, Dadi, Obvious, Noverly</td><td>No official page found</td><td><span class="wt off">Not trackable yet</span></td></tr>
       </tbody>
@@ -726,7 +726,110 @@ const ADS = [
  scene:"4:5 phone photo in a store’s supplement aisle, shelves of bottles blurred behind. A woman’s hand with red nails holds the product up in the centre. Upper-left: a white rounded badge with a small line of text and a big green store logo.",
  fix:["The hand holds the Sperm Worms pouch from Image 2, label to camera.","The badge shows only the text below, no store logo."],
  swaps:["A man’s hand pulling the last pouch off the shelf."],
- headlines:["BACK IN STOCK"],sub:"",callouts:["[Small line above the headline] Sold out twice."]}
+ headlines:["BACK IN STOCK"],sub:"",callouts:["[Small line above the headline] Sold out twice."]},
+
+/* ---------------- WATCHLIST: HIMS ---------------- */
+{key:"hims-ranking-emoji",brand:"Hims",title:"“Most men” ranking: worm, cheese, pickle, eggplant",format:"Video",ratio:"9:16",person:true,
+ imgs:[{id:"1635732604597558"}],pages:"hims",start:"28 Sep",end:"live",days:23,versions:4,live:true,dur:"0:34",
+ why:"Three friends rank four emoji-style foods, worm to eggplant, and the guy laughs along. It’s a size joke nobody has to say out loud. 4 copies running at once.",
+ fit:"Their #1 is a red gummy worm. That’s our product. Flip it: the worm wins.",fitTag:true,
+ flag:"No size or performance claims. The joke is on the ranking, not on a promise.",
+ scene:"Tall 9:16. Top half: a phone video of three friends in a bright living room with a framed world map on the wall. A woman in a white T-shirt leans over a smiling bearded man in a green backwards cap; another woman in a grey tank top shrugs at the camera. A lilac caption pill in the middle reads one short phrase. Bottom half: plain white with four numbered navy circles, and under them four cartoon icons: a red gummy worm, a string cheese, a pickle, an eggplant. A tiny ‘Actor portrayals’ line under them.",
+ fix:["The #1 icon becomes a yellow sour pineapple gummy worm, bigger and glossier than the others, with the Sperm Worms pouch from Image 2 small beside it.","Keep the other three icons as they are."],
+ swaps:["Re-rank: 1 Pickle, 2 Eggplant, 3 String cheese, 4 Sperm Worms with a crown on it."],
+ headlines:["Most men"],sub:"",callouts:["[Caption pill, middle] Most men","[Small line under the icons] Actor portrayals"],
+ beats:["0–3s: three friends on the couch; woman: ‘Rank these.’ Caption pill ‘Most men’.","3–15s: they argue over icons 1–4, the guy keeps laughing.","15–25s: reveal: #1 is a sour pineapple gummy worm. ‘Wait, that one’s actually good for you.’","25–34s: pouch end card: 4 gummies a day, zinc + L-carnitine, 30-day money-back."]},
+
+{key:"hims-three-stacks",brand:"Hims",title:"“Have better sex.” three-card product menu",format:"Static",ratio:"9:16",person:false,
+ imgs:[{id:"1457414799586486"}],pages:"hims",start:"23 Sep",end:"live",days:28,versions:3,live:true,
+ why:"Big blunt headline, then three coloured cards that each show the product and one benefit. You pick yours in a second. 3 copies running.",
+ fit:"Our three benefits fit three cards: count, volume, energy. Same pouch on each card.",fitTag:false,
+ flag:"We’re a supplement: no ‘Rx’, no ‘eligible’, no treating anything.",
+ scene:"Tall 9:16. Background: a warm brown, heavily blurred close-up photo of skin. Top-centre: a small caps label, then a big white sans-serif headline, then a short subline. Middle: three tall rounded cards side by side (red, lavender, light grey), each with a two-line label at the top and two pills lying in the lower half. Below: a wide cream pill-shaped button with dark spaced-out caps. Then a white serif logo and a tiny disclaimer.",
+ fix:["Each card shows the Sperm Worms pouch from Image 2 with a few yellow gummy worms in front instead of the pills.","The white logo becomes the Sperm Worms wordmark."],
+ swaps:["Use three gummy worms (one per card) instead of three pouches."],
+ headlines:["Have better loads."],sub:"Four gummies. Three upgrades.",callouts:["[Small caps label, top] DAILY MALE FERTILITY","[Card 1] Sperm Worms + Count","[Card 2] Sperm Worms + Volume","[Card 3] Sperm Worms + Energy","[Button] TRY IT RISK-FREE"]},
+
+/* ---------------- WATCHLIST: RO ---------------- */
+{key:"ro-pill-macro",brand:"Ro",title:"Embossed product macro + one-line promise",format:"Static",ratio:"9:16",person:false,
+ imgs:[{id:"1622977799256797"}],pages:"Ro",start:"16 Sep",end:"live",days:35,versions:1,live:true,
+ why:"One giant, tactile close-up of the product nestled in soft folds, logo, three-line headline. Premium and calm, nothing for Meta to flag.",
+ fit:"A gummy worm in macro looks great. Clean brand ad; good test against our UGC.",fitTag:false,
+ scene:"Tall 9:16, everything in one coral-pink tone. Soft draped fabric-like folds fill the frame; one round coral tablet with an embossed flame sits in the upper middle, nestled in a fold. Left-middle: a small white lowercase logo, then a three-line white bold headline, then four lines of small white text.",
+ fix:["The tablet becomes one big yellow sour pineapple gummy worm curled in the fold, sugar crystals visible; the whole scene turns pale pineapple-yellow.","Ignore the ‘PROTECTED’ watermark in Image 1. Don’t draw it.","The small logo becomes the Sperm Worms wordmark."],
+ swaps:["Put the pouch from Image 2 half-sunk in the folds instead of the worm."],
+ headlines:["Fertility, simplified."],sub:"",callouts:["[Small lines under the headline] Zinc, L-carnitine and folate in 4 sour pineapple gummies a day. 30-day money-back."]},
+
+{key:"ro-torn-sachet",brand:"Ro",title:"Torn sachet + comparison headline + checks",format:"Static",ratio:"9:16",person:false,
+ imgs:[{id:"3190114181192898"}],pages:"Ro",start:"17 Sep",end:"live",days:34,versions:1,live:true,
+ why:"A torn black sachet with the product popping out, one pain line, a ‘lasts longer’ headline with a coloured number, and two green ticks.",
+ fit:"The torn-open pouch with worms falling out is a strong product shot for us.",fitTag:false,
+ flag:"Don’t borrow ‘6x longer’ or any medical comparison. Only claims we can back.",
+ scene:"Tall 9:16, light warm-grey background. Top-centre: one small grey line, then a two-line black headline with one phrase in bold green and an asterisk. Middle: a black foil sachet torn open diagonally across the lower left, silver foil edges showing; one coral tablet floats beside the tear, with two green-tick lines to its right. A small frosted box with disclaimer text sits on the sachet.",
+ fix:["The sachet becomes the Sperm Worms pouch from Image 2 torn open, with yellow gummy worms spilling out; the floating tablet becomes one gummy worm.","Ignore the ‘PROTECTED’ watermark in Image 1. Don’t draw it."],
+ swaps:["Keep the sachet whole and show a hand tearing it."],
+ headlines:["Your swimmers need more than a multivitamin."],sub:"",callouts:["[Small grey line above] Most guys never think about it","[Tick 1] Zinc","[Tick 2] L-carnitine"]},
+
+{key:"ro-red-suit",brand:"Ro",title:"Model in head-to-toe brand colour + product prop",format:"Static",ratio:"9:16",person:true,
+ imgs:[{id:"3999851790319399"}],pages:"Ro",start:"1 Oct",end:"live",days:20,versions:1,live:true,
+ why:"A glamorous model in a full brand-colour outfit crouches holding a bag shaped like the product. Bold, playful, stops the scroll. They spent big on it.",
+ fit:"Our ‘sexy but safe’ lane. Swap the red for pineapple yellow.",fitTag:true,
+ flag:"Uses a real celebrity. Use a fictional model, no lookalike. No ‘faster than Viagra’ style claims.",
+ scene:"Tall 9:16, clean white studio. A woman with long dark hair in a skin-tight red long-sleeve bodysuit and red heels crouches low, centre-left, looking at the camera, holding a round red bag by its handle. Top-left: a two-line black headline with a tiny note after the first line. Right-middle: a frosted card with a close-up of a red tablet breaking into dust and three short lines. Bottom: big black logo on the left, small disclaimer on the right.",
+ fix:["Fictional woman, clearly not a celebrity; outfit and heels in pineapple yellow.","The round bag becomes the Sperm Worms pouch from Image 2 held by its top.","The frosted card shows a gummy worm instead of the tablet.","Ignore the ‘PROTECTED’ watermark in Image 1. Don’t draw it."],
+ swaps:["Same pose in a yellow satin dress, pouch in her clutch."],
+ headlines:["Tried a multivitamin?","Sperm Worms tastes better."],sub:"",callouts:["[Frosted card] Sour pineapple gummies for his fertility"]},
+
+/* ---------------- WATCHLIST: HONE HEALTH ---------------- */
+{key:"hone-year-of-trt",brand:"Hone Health",title:"“2026 is the year of …” selfie",format:"Video",ratio:"4:5",person:true,
+ imgs:[{id:"2334387683694155"}],pages:"Hone Health",start:"29 Mar",end:"live",days:206,versions:1,live:true,dur:"0:30",
+ why:"Shirtless guy outdoors in the sun, one blue caption bar, doing his routine on camera. Pure creator energy. Live almost 7 months, their longest runner.",
+ fit:"Swap the syringe for gummy worms. Fits the ‘real guy, real routine’ UGC we already make.",fitTag:true,
+ flag:"No needles or medical props. Keep him in a T-shirt or tank if Meta pushes back.",
+ scene:"4:5 phone selfie, bright sunny day, tall pine trees and blue sky behind. A fit man with dark swept-up hair and stubble, shirtless with a silver chain and a bracelet, eyes half-closed, holding a small item to his mouth. A blue rounded caption bar with white bold text near the top. Tiny white note at the bottom.",
+ fix:["He holds a yellow sour pineapple gummy worm to his mouth instead of the syringe; the Sperm Worms pouch from Image 2 in his other hand, low in frame."],
+ swaps:["Same guy at the gym car park, tank top on."],
+ headlines:["2026 is the year of the gummy worm"],sub:"",callouts:[],
+ beats:["0–3s: caption bar ‘2026 is the year of…’; he bites a gummy worm.","3–15s: talks to camera: why he started caring about his sperm health.","15–25s: shows the pouch, 4 a day, what’s in it.","25–30s: end card: 30-day money-back."]},
+
+{key:"hone-notes-checklist",brand:"Hone Health",title:"iPhone Notes checklist of symptoms",format:"Static",ratio:"9:16",person:false,
+ imgs:[{id:"4285535188404543"}],pages:"Hone Health",start:"17 Aug",end:"live",days:65,versions:1,live:true,
+ why:"Looks like someone’s phone note: ‘Men 35+: here are 14 signs…’ with tick circles. Guys silently check their own boxes. Zero production cost.",
+ fit:"Easy test. A ‘signs your swimmers need help’ list, no product photo needed.",fitTag:false,
+ flag:"Signs must be lifestyle, not diagnosis. Don’t say it treats anything.",
+ scene:"Tall 9:16 iPhone Notes screenshot on white: status bar with time at the top, yellow ‘< Notes’ back link and Done button. A bold dark two-line heading, then two columns of seven items, each with an empty circle. Below: a rounded yellow pill button with dark text. At the bottom: small grey disclaimer lines.",
+ fix:["Only the text changes, as below. Keep the Notes look exactly."],
+ swaps:["Add the pouch from Image 2 as a small photo pasted at the bottom of the note."],
+ headlines:["Guys 30+: 10 habits that hurt your sperm"],sub:"",callouts:["[Left column] Hot laptops on your lap · Long hot showers · Tight boxers · Vaping · Poor sleep","[Right column] Too much alcohol · Low zinc · Stress · Sitting all day · Skipping vitamins","[Yellow button] 4 gummies a day to back them up"]},
+
+{key:"hone-woman-box",brand:"Hone Health",title:"Woman holding the box to camera + price",format:"Static",ratio:"9:16",person:true,
+ imgs:[{id:"1076430838118771"}],pages:"Hone Health",start:"19 Aug",end:"live",days:63,versions:2,live:true,
+ why:"Smiling woman in gym clothes holds the box out to the camera; huge yellow price block and three frosted benefit rows. The price is the headline. 2 copies.",
+ fit:"‘Buy it for him’ angle from a woman. Our women-buyer angle from Foundry.",fitTag:true,
+ scene:"Tall 9:16, indoor sports hall with blue floor and dark net behind. A smiling woman with long wavy brown hair in a black crop top and black shorts holds a black box out towards the camera at chest height. Top-left: a big black price on a bright yellow block, with two white words under it. Lower-left: three stacked dark frosted rows with white text. A tiny disclaimer box at the bottom.",
+ fix:["She holds the Sperm Worms pouch from Image 2 out to camera instead of the box.","Price block shows our price."],
+ swaps:["Same pose, but she’s at home holding the pouch next to a coffee mug."],
+ headlines:["$39"],sub:"",callouts:["[Two words under the price] His fertility","[Row 1] 4 gummies a day","[Row 2] Zinc + L-carnitine","[Row 3] 30-day money-back"]},
+
+/* ---------------- WATCHLIST: MAXIMUS ---------------- */
+{key:"max-tired-foggy-flat",brand:"Maximus",title:"Tired / Foggy / Flat line icons + product lineup",format:"Static",ratio:"9:16",person:false,
+ imgs:[{id:"1415890517363268"}],pages:"Maximus",start:"15 Oct",end:"live",days:6,versions:1,live:true,
+ why:"Three simple line drawings of a guy through the day, each with one big word and a time. Then the product lineup and a price. Reads in two seconds. New, but high in their impressions sort.",
+ fit:"Cartoon line art with no models; safe and fast. Map it to his day, then the pouch.",fitTag:false,
+ scene:"Tall 9:16. Top half white: a small spaced logo, then three navy line-drawing heads in a row (sleepy with Zs, cloudy head, slumped with a low battery), each with a big bold navy word and a smaller time under it. Bottom half royal blue: a product lineup standing on the blue edge, then three centred white lines, the middle one with a light highlight box, then tiny disclaimer text.",
+ fix:["The product lineup becomes three Sperm Worms pouches from Image 2 with a few gummy worms in front.","The logo becomes ‘SPERM WORMS’."],
+ swaps:["Make it four panels with a 4th happy face: ‘Ready by 9PM’."],
+ headlines:["Your swimmers work all day too."],sub:"",callouts:["[Panel 1] Tired / at 7AM","[Panel 2] Foggy / at 11AM","[Panel 3] Flat / by 2PM","[Highlight line] 4 sour pineapple gummies a day,","[Last line] 30-day money-back."]},
+
+{key:"max-desk-offer",brand:"Maximus",title:"Product on a desk + benefit pills + bundle offer",format:"Static",ratio:"9:16",person:false,
+ imgs:[{id:"2202332813662718"}],pages:"Maximus",start:"1 Oct",end:"live",days:20,versions:1,live:true,
+ why:"Calm product photo on a wooden desk next to a signed note, three navy benefit pills up top, a serif ‘Buy 2, get 1 free’ offer below. Classy offer ad.",
+ fit:"Our Subscribe & Save offer fits this layout exactly.",fitTag:false,
+ flag:"Only run offers we actually have.",
+ scene:"Tall 9:16, warm light wood desk, soft daylight. A white notepad with a fountain pen and a signature lies at the right. One product tube with a blue cap stands in the centre. Upper-left: three navy rounded pills with white bold text stacked. Lower-left: a two-line dark navy serif headline with one italic word, a bold subline and one small grey line. Tiny disclaimer at the very bottom.",
+ fix:["The tube becomes the Sperm Worms pouch from Image 2 standing upright, with two gummy worms next to it."],
+ swaps:["The note on the desk is a handwritten ‘Take 4 a day 🍍’."],
+ headlines:["Subscribe and save up to 30%."],sub:"The money-back guarantee comes with every pouch.",callouts:["[Pill 1] Sour pineapple flavour","[Pill 2] Zinc + L-carnitine","[Pill 3] 30-day money-back"]}
 ];
 
 const FILE = id => `ads/${id}.jpg`;
