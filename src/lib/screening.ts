@@ -17,6 +17,30 @@ export const ATTENTION_WORD = "reel";
 /** Anything faster than this and they didn't read the questions. */
 export const MIN_SECONDS = 30;
 
+/**
+ * Where they saw the post. Fixed list so answers group cleanly — free text
+ * alone gives you "insta", "IG", "Instagram story" and no way to count them.
+ * `needsDetail` marks the ones where the specific name is the useful part.
+ */
+export const SOURCE_OPTIONS = [
+  { value: "instagram", label: "Instagram", needsDetail: false },
+  { value: "facebook", label: "Facebook group", needsDetail: true },
+  { value: "discord", label: "Discord server", needsDetail: true },
+  { value: "whatsapp", label: "WhatsApp", needsDetail: false },
+  { value: "friend", label: "A friend told me", needsDetail: false },
+  { value: "other", label: "Somewhere else", needsDetail: true },
+] as const;
+
+export type SourceValue = (typeof SOURCE_OPTIONS)[number]["value"];
+
+export const SOURCE_LABELS: Record<string, string> = Object.fromEntries(
+  SOURCE_OPTIONS.map((o) => [o.value, o.label]),
+);
+
+export function sourceNeedsDetail(value: string): boolean {
+  return SOURCE_OPTIONS.find((o) => o.value === value)?.needsDetail ?? false;
+}
+
 export interface ScreeningInput {
   attentionAnswer: string;
   secondsTaken: number;

@@ -35,6 +35,16 @@ model Applicant {
   whatsapp String
   city     String?
 
+  /// Which channel the post was seen on, so it's clear what's actually
+  /// bringing people in. Defaulted rather than required: applications that
+  /// arrived before this was asked predate the question.
+  source       String  @default("")
+  /// The specific page, group or server name — the useful half of the answer.
+  sourceDetail String?
+  /// Captured from ?from= on the link, so a per-channel URL tags itself
+  /// without the applicant having to tell us anything.
+  sourceTag    String?
+
   /// Has actually cut AI UGC ads before, as opposed to general video work.
   hasAiAdsExperience Boolean
   portfolio          String?
@@ -312,3 +322,4 @@ model BriefChecklist {
   @@index([editorId])
   @@index([createdAt])
 }
+

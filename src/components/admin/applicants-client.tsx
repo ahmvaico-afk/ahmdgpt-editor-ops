@@ -6,12 +6,16 @@ import { fetcher } from "@/lib/fetcher";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/date";
+import { SOURCE_LABELS } from "@/lib/screening";
 
 interface Applicant {
   id: string;
   name: string;
   whatsapp: string;
   city: string | null;
+  source: string;
+  sourceDetail: string | null;
+  sourceTag: string | null;
   hasAiAdsExperience: boolean;
   portfolio: string | null;
   software: string;
@@ -29,6 +33,15 @@ interface Applicant {
   filterReason: string | null;
   status: "new" | "shortlisted" | "rejected";
   createdAt: string;
+}
+
+/** "Facebook group — Video Editors Pakistan", or the raw value if unknown. */
+function sourceText(p: Applicant): string | null {
+  if (!p.source && !p.sourceTag) return null;
+  const label = SOURCE_LABELS[p.source] ?? p.source;
+  const detail = p.sourceDetail || p.sourceTag;
+  if (!label) return detail;
+  return detail ? `${label} — ${detail}` : label;
 }
 
 const HOURS_LABELS: Record<string, string> = {
@@ -54,11 +67,31 @@ export function ApplicantsClient() {
   const { data, mutate } = useSWR<{
     applicants: Applicant[];
     counts: Record<string, number>;
+    sources: { source: string; count: number }[];
   }>(`/api/admin/applicants${tab ? `?status=${tab}` : ""}`, fetcher, {
     refreshInterval: 30000,
   });
 
   const applicants = data?.applicants ?? [];
+
+  async function remove(p: Applicant) {
+    if (
+      !confirm(
+        `Delete ${p.name}'s application for good? This can't be undone — use Reject if you just want them out of the way.`,
+      )
+    ) {
+      return;
+    }
+    setBusy(p.id);
+    try {
+      await fetch(`/api/admin/applicants?id=${encodeURIComponent(p.id)}`, {
+        method: "DELETE",
+      });
+      await mutate();
+    } finally {
+      setBusy(null);
+    }
+  }
 
   async function setStatus(id: string, status: Applicant["status"]) {
     setBusy(id);
@@ -100,6 +133,18 @@ export function ApplicantsClient() {
           Open the form →
         </a>
       </div>
+
+      {(data?.sources?.length ?? 0) > 0 && (
+        <p className="flex flex-wrap gap-x-3 gap-y-1 font-mono text-[11px] text-muted">
+          <span className="text-muted-2">Coming from</span>
+          {data!.sources.map((s) => (
+            <span key={s.source}>
+              {SOURCE_LABELS[s.source] ?? s.source}{" "}
+              <span className="text-text">{s.count}</span>
+            </span>
+          ))}
+        </p>
+      )}
 
       <Card className="divide-y divide-border">
         {applicants.length === 0 && (
@@ -158,6 +203,7 @@ export function ApplicantsClient() {
                   </Row>
                   <Row label="Phone">{p.ownsPhone ? "Yes" : "No"}</Row>
                   <Row label="Feedback">{p.handlesFeedback ? "Says yes" : "Says no"}</Row>
+                  {sourceText(p) && <Row label="Found us">{sourceText(p)}</Row>}
                   {p.turnaround && <Row label="Turnaround">{p.turnaround}</Row>}
                   {p.whyYou && (
                     <Row label="Why them">
@@ -203,6 +249,15 @@ export function ApplicantsClient() {
                         Back to new
                       </Button>
                     )}
+                    {/* Separated from the status buttons so it isn't a
+                        neighbour of Reject — this one doesn't come back. */}
+                    <button
+                      onClick={() => remove(p)}
+                      disabled={busy === p.id}
+                      className="ml-auto font-mono text-[11px] uppercase tracking-wider text-muted-2 transition-colors hover:text-accent disabled:opacity-40"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
               )}

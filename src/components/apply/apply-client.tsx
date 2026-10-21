@@ -2,13 +2,15 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EyeLogo } from "@/components/eye-logo";
-import { ATTENTION_WORD } from "@/lib/screening";
+import { ATTENTION_WORD, SOURCE_OPTIONS, sourceNeedsDetail } from "@/lib/screening";
 import { HOURS_BANDS } from "@/lib/validation";
 
 type Answers = {
   name: string;
   whatsapp: string;
   city: string;
+  source: string;
+  sourceDetail: string;
   hasAiAdsExperience: boolean | null;
   portfolio: string;
   software: string;
@@ -27,6 +29,8 @@ const EMPTY: Answers = {
   name: "",
   whatsapp: "",
   city: "",
+  source: "",
+  sourceDetail: "",
   hasAiAdsExperience: null,
   portfolio: "",
   software: "",
@@ -63,6 +67,16 @@ export function ApplyClient() {
   /** Set when they hit Start, so we know how long the form actually took. */
   const startedAt = useRef<number | null>(null);
 
+  /**
+   * `?from=` on the link, so a per-channel URL tags itself. Read once on mount
+   * rather than at submit, in case the applicant navigates within the page.
+   */
+  const sourceTag = useRef<string>("");
+  useEffect(() => {
+    const tag = new URLSearchParams(window.location.search).get("from");
+    if (tag) sourceTag.current = tag.slice(0, 60);
+  }, []);
+
   // Matches the CRT animation length in globals.css.
   useEffect(() => {
     const t = setTimeout(() => setBooted(true), 1600);
@@ -78,7 +92,12 @@ export function ApplyClient() {
   const canAdvance = useMemo(() => {
     switch (step) {
       case 0:
-        return a.name.trim().length >= 2 && a.whatsapp.trim().length >= 7;
+        return (
+          a.name.trim().length >= 2 &&
+          a.whatsapp.trim().length >= 7 &&
+          a.source !== "" &&
+          (!sourceNeedsDetail(a.source) || a.sourceDetail.trim().length > 1)
+        );
       case 1:
         return (
           a.hasAiAdsExperience !== null &&
@@ -119,6 +138,7 @@ export function ApplyClient() {
           secondsTaken: startedAt.current
             ? Math.round((Date.now() - startedAt.current) / 1000)
             : 0,
+          sourceTag: sourceTag.current || undefined,
         }),
       });
       if (!res.ok) {
@@ -223,6 +243,38 @@ export function ApplyClient() {
             <Q label="Which city are you in?" optional>
               <TextInput value={a.city} onChange={(v) => set("city", v)} placeholder="Lahore" />
             </Q>
+            <Q label="Where did you see this?">
+              <div className="flex flex-col gap-2">
+                {SOURCE_OPTIONS.map((o) => (
+                  <Choice
+                    key={o.value}
+                    label={o.label}
+                    selected={a.source === o.value}
+                    onClick={() => set("source", o.value)}
+                  />
+                ))}
+              </div>
+            </Q>
+            {sourceNeedsDetail(a.source) && (
+              <Q
+                label={
+                  a.source === "facebook"
+                    ? "Which group?"
+                    : a.source === "discord"
+                      ? "Which server?"
+                      : "Where exactly?"
+                }
+                hint="The name is enough."
+              >
+                <TextInput
+                  value={a.sourceDetail}
+                  onChange={(v) => set("sourceDetail", v)}
+                  placeholder={
+                    a.source === "facebook" ? "e.g. Video Editors Pakistan" : "Name it"
+                  }
+                />
+              </Q>
+            )}
           </>
         )}
 

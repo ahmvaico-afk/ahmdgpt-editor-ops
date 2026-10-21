@@ -142,6 +142,12 @@ export const applicantSchema = z.object({
   whatsapp: z.string().trim().min(7).max(30),
   city: z.string().trim().max(80).optional().or(z.literal("")),
 
+  /// Loose on purpose: an unrecognised value is still worth recording, and the
+  /// admin side falls back to showing it raw.
+  source: z.string().trim().max(40).optional().or(z.literal("")),
+  sourceDetail: z.string().trim().max(120).optional().or(z.literal("")),
+  sourceTag: z.string().trim().max(60).optional().or(z.literal("")),
+
   hasAiAdsExperience: z.boolean(),
   portfolio: z.string().trim().max(600).optional().or(z.literal("")),
   software: z.string().trim().min(2).max(200),
