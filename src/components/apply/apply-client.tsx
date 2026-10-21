@@ -2,7 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EyeLogo } from "@/components/eye-logo";
-import { ATTENTION_WORD, SOURCE_OPTIONS, sourceNeedsDetail } from "@/lib/screening";
+import {
+  ATTENTION_WORD,
+  MIN_SOURCE_DETAIL,
+  SOURCE_OPTIONS,
+  sourceDetailLabel,
+  sourceDetailPlaceholder,
+} from "@/lib/screening";
 import { HOURS_BANDS } from "@/lib/validation";
 
 type Answers = {
@@ -96,7 +102,9 @@ export function ApplyClient() {
           a.name.trim().length >= 2 &&
           a.whatsapp.trim().length >= 7 &&
           a.source !== "" &&
-          (!sourceNeedsDetail(a.source) || a.sourceDetail.trim().length > 1)
+          // Always required now — the channel alone doesn't tell us which post
+          // is actually working.
+          a.sourceDetail.trim().length >= MIN_SOURCE_DETAIL
         );
       case 1:
         return (
@@ -255,23 +263,15 @@ export function ApplyClient() {
                 ))}
               </div>
             </Q>
-            {sourceNeedsDetail(a.source) && (
+            {a.source !== "" && (
               <Q
-                label={
-                  a.source === "facebook"
-                    ? "Which group?"
-                    : a.source === "discord"
-                      ? "Which server?"
-                      : "Where exactly?"
-                }
-                hint="The name is enough."
+                label={sourceDetailLabel(a.source)}
+                hint="The exact name, please — we check which ones are worth posting in."
               >
                 <TextInput
                   value={a.sourceDetail}
                   onChange={(v) => set("sourceDetail", v)}
-                  placeholder={
-                    a.source === "facebook" ? "e.g. Video Editors Pakistan" : "Name it"
-                  }
+                  placeholder={sourceDetailPlaceholder(a.source)}
                 />
               </Q>
             )}

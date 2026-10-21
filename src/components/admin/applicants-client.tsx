@@ -35,13 +35,17 @@ interface Applicant {
   createdAt: string;
 }
 
-/** "Facebook group — Video Editors Pakistan", or the raw value if unknown. */
+/**
+ * "Video Editors Pakistan (Facebook group)" — the page first, since that's the
+ * part being judged. Falls back to the ?from= tag for anyone who arrived on a
+ * tagged link, and to the bare channel for the applications that predate the
+ * question being asked.
+ */
 function sourceText(p: Applicant): string | null {
-  if (!p.source && !p.sourceTag) return null;
   const label = SOURCE_LABELS[p.source] ?? p.source;
   const detail = p.sourceDetail || p.sourceTag;
-  if (!label) return detail;
-  return detail ? `${label} — ${detail}` : label;
+  if (detail) return label ? `${detail} (${label})` : detail;
+  return label || null;
 }
 
 const HOURS_LABELS: Record<string, string> = {
@@ -67,7 +71,7 @@ export function ApplicantsClient() {
   const { data, mutate } = useSWR<{
     applicants: Applicant[];
     counts: Record<string, number>;
-    sources: { source: string; count: number }[];
+    sources: { source: string; detail: string | null; count: number }[];
   }>(`/api/admin/applicants${tab ? `?status=${tab}` : ""}`, fetcher, {
     refreshInterval: 30000,
   });
@@ -135,15 +139,25 @@ export function ApplicantsClient() {
       </div>
 
       {(data?.sources?.length ?? 0) > 0 && (
-        <p className="flex flex-wrap gap-x-3 gap-y-1 font-mono text-[11px] text-muted">
-          <span className="text-muted-2">Coming from</span>
+        <Card className="flex flex-col gap-1.5 p-4">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-muted-2">
+            Where they&rsquo;re coming from
+          </p>
           {data!.sources.map((s) => (
-            <span key={s.source}>
-              {SOURCE_LABELS[s.source] ?? s.source}{" "}
-              <span className="text-text">{s.count}</span>
-            </span>
+            <div
+              key={`${s.source}:${s.detail ?? ""}`}
+              className="flex items-baseline justify-between gap-3 font-mono text-xs"
+            >
+              <span className="min-w-0 truncate text-text">
+                {s.detail || <span className="text-muted-2">(not named)</span>}
+                <span className="ml-2 text-muted-2">
+                  {SOURCE_LABELS[s.source] ?? s.source}
+                </span>
+              </span>
+              <span className="shrink-0 text-accent">{s.count}</span>
+            </div>
           ))}
-        </p>
+        </Card>
       )}
 
       <Card className="divide-y divide-border">
@@ -183,6 +197,11 @@ export function ApplicantsClient() {
                     {p.secondsTaken > 0 && ` · took ${p.secondsTaken}s`} ·{" "}
                     {formatDate(p.createdAt)}
                   </p>
+                  {/* On the collapsed row, not just the detail panel — which
+                      post pulled someone in is the first thing worth seeing. */}
+                  {sourceText(p) && (
+                    <p className="mt-0.5 font-mono text-xs text-gold">via {sourceText(p)}</p>
+                  )}
                 </div>
                 <span className="font-mono text-[11px] uppercase tracking-wider text-muted-2">
                   {expanded ? "▲" : "▼"}

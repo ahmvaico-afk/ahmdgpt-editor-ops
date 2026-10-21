@@ -18,17 +18,49 @@ export const ATTENTION_WORD = "reel";
 export const MIN_SECONDS = 30;
 
 /**
- * Where they saw the post. Fixed list so answers group cleanly — free text
- * alone gives you "insta", "IG", "Instagram story" and no way to count them.
- * `needsDetail` marks the ones where the specific name is the useful part.
+ * Where they saw the post. The channel is a fixed list so answers group
+ * cleanly — free text alone gives you "insta", "IG" and "Instagram story" with
+ * no way to count them — but the channel on its own is nearly useless. The
+ * exact page, group or server is the answer that matters, so every option asks
+ * for it and the wording changes to suit.
  */
 export const SOURCE_OPTIONS = [
-  { value: "instagram", label: "Instagram", needsDetail: false },
-  { value: "facebook", label: "Facebook group", needsDetail: true },
-  { value: "discord", label: "Discord server", needsDetail: true },
-  { value: "whatsapp", label: "WhatsApp", needsDetail: false },
-  { value: "friend", label: "A friend told me", needsDetail: false },
-  { value: "other", label: "Somewhere else", needsDetail: true },
+  {
+    value: "instagram",
+    label: "Instagram",
+    detailLabel: "Which account did you see it on?",
+    placeholder: "e.g. @ahmd.gpt",
+  },
+  {
+    value: "facebook",
+    label: "Facebook group",
+    detailLabel: "Which group?",
+    placeholder: "e.g. Video Editors Pakistan",
+  },
+  {
+    value: "discord",
+    label: "Discord server",
+    detailLabel: "Which server?",
+    placeholder: "e.g. HUGC",
+  },
+  {
+    value: "whatsapp",
+    label: "WhatsApp",
+    detailLabel: "Which group, or who sent it?",
+    placeholder: "Group name or person",
+  },
+  {
+    value: "friend",
+    label: "A friend told me",
+    detailLabel: "Who told you?",
+    placeholder: "Their name",
+  },
+  {
+    value: "other",
+    label: "Somewhere else",
+    detailLabel: "Where exactly?",
+    placeholder: "Name the page, site or app",
+  },
 ] as const;
 
 export type SourceValue = (typeof SOURCE_OPTIONS)[number]["value"];
@@ -37,9 +69,18 @@ export const SOURCE_LABELS: Record<string, string> = Object.fromEntries(
   SOURCE_OPTIONS.map((o) => [o.value, o.label]),
 );
 
-export function sourceNeedsDetail(value: string): boolean {
-  return SOURCE_OPTIONS.find((o) => o.value === value)?.needsDetail ?? false;
+export function sourceDetailLabel(value: string): string {
+  return (
+    SOURCE_OPTIONS.find((o) => o.value === value)?.detailLabel ?? "Where exactly?"
+  );
 }
+
+export function sourceDetailPlaceholder(value: string): string {
+  return SOURCE_OPTIONS.find((o) => o.value === value)?.placeholder ?? "Name it";
+}
+
+/** Guards against "idk", "fb", "yes" — too short to identify anything. */
+export const MIN_SOURCE_DETAIL = 3;
 
 export interface ScreeningInput {
   attentionAnswer: string;

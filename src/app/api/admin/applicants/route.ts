@@ -36,10 +36,11 @@ export async function GET(request: NextRequest) {
   });
   const filtered = await prisma.applicant.count({ where: { autoFiltered: true } });
 
-  // Across everyone worth reading, not the current tab — the question is which
-  // channels send good people, so the filtered-out pile would only muddy it.
+  // Grouped by the exact page, not just the channel — "Facebook group: 9" is
+  // useless when the question is which of the nine groups to post in again.
+  // Across everyone worth reading, so the filtered-out pile doesn't muddy it.
   const bySource = await prisma.applicant.groupBy({
-    by: ["source"],
+    by: ["source", "sourceDetail"],
     where: { autoFiltered: false },
     _count: true,
   });
@@ -52,7 +53,11 @@ export async function GET(request: NextRequest) {
     },
     sources: bySource
       .filter((s) => s.source !== "")
-      .map((s) => ({ source: s.source, count: s._count }))
+      .map((s) => ({
+        source: s.source,
+        detail: s.sourceDetail ?? null,
+        count: s._count,
+      }))
       .sort((a, b) => b.count - a.count),
   });
 }
