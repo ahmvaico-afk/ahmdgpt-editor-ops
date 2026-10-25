@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { createSubmissionSchema } from "@/lib/validation";
 import { calculatePriceCents, dollarsToCents } from "@/lib/pricing";
 import { getCurrentBatch } from "@/lib/batch";
+import { notifyDiscord } from "@/lib/discord";
 import type { Prisma } from "@/generated/prisma/client";
 
 const PAGE_SIZE = 25;
@@ -137,6 +138,14 @@ export async function POST(request: NextRequest) {
       data: { submissionId: submission.id },
     });
   }
+
+  const editor = await prisma.editor.findUnique({
+    where: { id: session.editorId },
+    select: { name: true },
+  });
+  notifyDiscord(
+    `🎬 **${editor?.name ?? "An editor"}** logged **${data.title}** · ${style.name} · ${durationMinutes} min`
+  );
 
   return NextResponse.json({ submission }, { status: 201 });
 }

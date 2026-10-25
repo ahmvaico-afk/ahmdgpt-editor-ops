@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession, isQaEditor, requireEditorSession } from "@/lib/auth";
 import { updateSubmissionSchema } from "@/lib/validation";
 import { calculatePriceCents } from "@/lib/pricing";
+import { notifyDiscord, statusLine } from "@/lib/discord";
 import type { Prisma } from "@/generated/prisma/client";
 
 export async function PATCH(
@@ -90,7 +91,14 @@ export async function PATCH(
   const submission = await prisma.videoSubmission.update({
     where: { id },
     data: update,
+    include: { editor: { select: { name: true } } },
   });
+
+  if (data.status !== undefined && data.status !== existing.status) {
+    notifyDiscord(
+      `**${submission.title}** by **${submission.editor.name}** ${statusLine(data.status)}`
+    );
+  }
 
   return NextResponse.json({ submission });
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireOwnerSession } from "@/lib/auth";
+import { notifyDiscord, statusLine } from "@/lib/discord";
 import type { Prisma } from "@/generated/prisma/client";
 import type { SubmissionStatus } from "@/lib/types";
 
@@ -34,6 +35,12 @@ export async function POST(request: NextRequest) {
     where,
     data: { status: toStatus },
   });
+
+  if (result.count > 0) {
+    notifyDiscord(
+      `${result.count} video${result.count === 1 ? "" : "s"}${body.batch ? ` from batch ${body.batch}` : ""} ${statusLine(toStatus!)}`
+    );
+  }
 
   return NextResponse.json({ updated: result.count });
 }
