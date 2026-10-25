@@ -1,0 +1,14 @@
+name: Weekly Discord wrap-up
+
+on:
+  schedule:
+    # Mondays 04:00 UTC = 9am Pakistan time.
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ask the portal to post last week's wrap-up
+        run: curl -fsS https://lionfish-app-3km5x.ondigitalocean.app/api/discord/weekly

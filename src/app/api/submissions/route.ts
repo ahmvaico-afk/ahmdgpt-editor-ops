@@ -5,6 +5,7 @@ import { createSubmissionSchema } from "@/lib/validation";
 import { calculatePriceCents, dollarsToCents } from "@/lib/pricing";
 import { getCurrentBatch } from "@/lib/batch";
 import { notifyDiscord } from "@/lib/discord";
+import { editorWeekSummary } from "@/lib/weekly";
 import type { Prisma } from "@/generated/prisma/client";
 
 const PAGE_SIZE = 25;
@@ -143,8 +144,10 @@ export async function POST(request: NextRequest) {
     where: { id: session.editorId },
     select: { name: true },
   });
+  const name = editor?.name ?? "An editor";
   notifyDiscord(
-    `🎬 **${editor?.name ?? "An editor"}** logged **${data.title}** · ${style.name} · ${durationMinutes} min`
+    `🎬 **${name}** logged **${data.title}** · ${style.name} · ${durationMinutes} min\n` +
+      `${name}'s total this week: ${await editorWeekSummary(session.editorId)}`
   );
 
   return NextResponse.json({ submission }, { status: 201 });
