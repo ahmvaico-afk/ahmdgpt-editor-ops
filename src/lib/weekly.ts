@@ -8,7 +8,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 // What the week's top editor gets, shown in the wrap-up. Leave empty to
 // announce the bonus without an amount.
-const WEEKLY_BONUS = "";
+const WEEKLY_BONUS = "PKR 5,000";
 
 export function weekStart(at: Date = new Date()): Date {
   const local = new Date(at.getTime() + PKT_OFFSET_MS);
