@@ -35,32 +35,42 @@ export async function editorWeekSummary(editorId: string): Promise<string> {
   return `${videos(totals._count)} · ${formatMinutes(totals._sum.durationMinutes ?? 0)}`;
 }
 
-/** Wrap-up for the last full week, or null if nobody logged anything. */
-export async function lastWeekWrapUp(): Promise<{ weekKey: string; message: string } | null> {
-  const end = weekStart();
-  const start = new Date(end.getTime() - 7 * DAY_MS);
-
+/** Editors ranked by videos (then minutes) logged in [start, end). */
+async function rankEditors(start: Date, end: Date) {
   const rows = await prisma.videoSubmission.groupBy({
     by: ["editorId"],
     where: { submittedAt: { gte: start, lt: end }, status: { not: "rejected" } },
     _count: true,
     _sum: { durationMinutes: true },
   });
-  if (rows.length === 0) return null;
-
   const editors = await prisma.editor.findMany({
     where: { id: { in: rows.map((r) => r.editorId) } },
     select: { id: true, name: true },
   });
   const nameOf = new Map(editors.map((e) => [e.id, e.name]));
 
-  const ranked = rows
+  return rows
     .map((r) => ({
       name: nameOf.get(r.editorId) ?? "Unknown",
       count: r._count,
       minutes: r._sum.durationMinutes ?? 0,
     }))
     .sort((a, b) => b.count - a.count || b.minutes - a.minutes);
+}
+
+/** This week so far, one editor per line, for the Discord /ask bot's context. */
+export async function thisWeekStandings(): Promise<string> {
+  const ranked = await rankEditors(weekStart(), new Date());
+  if (ranked.length === 0) return "Nobody has logged a video yet this week.";
+  return ranked.map((r, i) => `${i + 1}. ${r.name}: ${videos(r.count)} · ${formatMinutes(r.minutes)}`).join("\n");
+}
+
+/** Wrap-up for the last full week, or null if nobody logged anything. */
+export async function lastWeekWrapUp(): Promise<{ weekKey: string; message: string } | null> {
+  const end = weekStart();
+  const start = new Date(end.getTime() - 7 * DAY_MS);
+  const ranked = await rankEditors(start, end);
+  if (ranked.length === 0) return null;
 
   const top = ranked[0];
   const totalCount = ranked.reduce((n, r) => n + r.count, 0);
