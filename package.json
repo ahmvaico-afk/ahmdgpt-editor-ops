@@ -26,6 +26,7 @@
     "@resvg/resvg-js": "^2.6.2",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.5",
+    "mediabunny": "1.61.4",
     "next": "16.2.12",
     "pg": "^8.22.0",
     "prisma": "^7.9.1",

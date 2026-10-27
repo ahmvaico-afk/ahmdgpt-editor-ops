@@ -142,6 +142,12 @@ export function DashboardClient({
           News Text
         </Link>
         <Link
+          href={`/portal/${editorCode}/ad-resizer`}
+          className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
+        >
+          Ad Resizer
+        </Link>
+        <Link
           href={`/portal/${editorCode}/leaderboard`}
           className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
         >
