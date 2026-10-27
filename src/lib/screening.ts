@@ -14,8 +14,13 @@
  */
 export const ATTENTION_WORD = "reel";
 
-/** Anything faster than this and they didn't read the questions. */
-export const MIN_SECONDS = 30;
+/**
+ * Anything faster than this and they didn't read the questions. Lowered when
+ * the form dropped to nine questions — on the old fourteen-question version
+ * thirty seconds was impossible, but a fast, genuine applicant can now finish
+ * inside that, and filtering those out costs more than the odd bot getting in.
+ */
+export const MIN_SECONDS = 18;
 
 /**
  * Where they saw the post. The channel is a fixed list so answers group

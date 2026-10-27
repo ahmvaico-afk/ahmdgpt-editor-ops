@@ -220,8 +220,6 @@ export function ApplicantsClient() {
                   <Row label="Computer">
                     {p.ownsComputer ? p.computerSpecs || "Yes" : "None"}
                   </Row>
-                  <Row label="Phone">{p.ownsPhone ? "Yes" : "No"}</Row>
-                  <Row label="Feedback">{p.handlesFeedback ? "Says yes" : "Says no"}</Row>
                   {sourceText(p) && <Row label="Found us">{sourceText(p)}</Row>}
                   {p.turnaround && <Row label="Turnaround">{p.turnaround}</Row>}
                   {p.whyYou && (

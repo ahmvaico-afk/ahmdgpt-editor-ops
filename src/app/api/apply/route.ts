@@ -13,14 +13,19 @@ export async function POST(request: NextRequest) {
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     request.headers.get("x-real-ip") ||
-    "unknown";
+    "";
 
-  const rate = checkRateLimit(`apply:${ip}`);
-  if (!rate.allowed) {
-    return NextResponse.json(
-      { error: "Too many applications from here. Try again later." },
-      { status: 429 },
-    );
+  // Only when we can actually tell callers apart. With no forwarded address
+  // every applicant shares one key, and the limiter would take the form down
+  // for everybody instead of slowing one spammer down.
+  if (ip) {
+    const rate = checkRateLimit(`apply:${ip}`, 40);
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: "Too many applications from here. Try again later." },
+        { status: 429 },
+      );
+    }
   }
 
   const body = await request.json().catch(() => null);
@@ -56,9 +61,12 @@ export async function POST(request: NextRequest) {
       aiTools: d.aiTools || null,
       ownsComputer: d.ownsComputer,
       computerSpecs: d.computerSpecs || null,
-      ownsPhone: d.ownsPhone,
+      // Both columns stay NOT NULL for the applications that hold real
+      // answers; the form stopped asking, so new rows take a neutral value
+      // and the admin panel no longer shows either.
+      ownsPhone: d.ownsPhone ?? true,
       hoursPerDay: d.hoursPerDay,
-      handlesFeedback: d.handlesFeedback,
+      handlesFeedback: d.handlesFeedback ?? true,
       turnaround: d.turnaround || null,
       whyYou: d.whyYou || null,
       attentionAnswer: d.attentionAnswer,

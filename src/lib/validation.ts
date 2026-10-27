@@ -155,10 +155,12 @@ export const applicantSchema = z.object({
 
   ownsComputer: z.boolean(),
   computerSpecs: z.string().trim().max(300).optional().or(z.literal("")),
-  ownsPhone: z.boolean(),
+  /// Retired from the form — kept optional so older clients still validate.
+  ownsPhone: z.boolean().optional(),
 
   hoursPerDay: z.enum(HOURS_BANDS),
-  handlesFeedback: z.boolean(),
+  /// Retired from the form: everyone answers yes, so it sorted nobody.
+  handlesFeedback: z.boolean().optional(),
   turnaround: z.string().trim().max(80).optional().or(z.literal("")),
   whyYou: z.string().trim().max(1000).optional().or(z.literal("")),
 
