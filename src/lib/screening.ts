@@ -49,17 +49,27 @@ export function countryFromPhone(whatsapp: string): CountryValue {
   // (0300) 123 4567 and every spacing in between.
   const digits = whatsapp.replace(/\D/g, "");
 
-  // Dialling code, with or without the 00 trunk prefix in front of it.
+  // Written out with a dialling code, with or without the 00 trunk prefix.
+  // The length floor matters: an Indian mobile can begin 92 or 63 on its own,
+  // and without it half of India lands in the Pakistan tab.
   const international = digits.replace(/^00/, "");
-  if (international.startsWith("92")) return "pk";
-  if (international.startsWith("63")) return "ph";
+  if (/^92\d{9,11}$/.test(international)) return "pk";
+  if (/^63\d{9,11}$/.test(international)) return "ph";
 
-  // The local mobile form, which is what most people type. Both countries
-  // write it as eleven digits starting 0, then 3 for Pakistan and 9 for the
-  // Philippines — 0300 1234567 and 0917 123 4567. Requiring the full eleven
-  // keeps landlines and half-typed numbers out of both buckets.
-  if (digits.length === 11 && digits.startsWith("03")) return "pk";
-  if (digits.length === 11 && digits.startsWith("09")) return "ph";
+  // The local form, which is what most people actually type — and they type
+  // it inconsistently, so the leading zero can't be relied on.
+  const local = digits.replace(/^0+/, "");
+
+  // A Pakistani mobile is 3XX and then seven digits. No other country writes
+  // a number of this length starting with a 3, so the missing zero and the
+  // occasional fat-fingered extra digit are both safe to forgive.
+  if (/^3\d{8,10}$/.test(local)) return "pk";
+
+  // A Filipino mobile is 9XX and then seven digits, but so is an Indian one,
+  // and India answers these ads too. Only the fully written local form, with
+  // its leading zero, is safe to call — anything shorter stays unsorted
+  // rather than being put in the wrong campaign.
+  if (/^09\d{9}$/.test(digits)) return "ph";
 
   return "other";
 }
