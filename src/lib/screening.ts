@@ -23,6 +23,48 @@ export const ATTENTION_WORD = "reel";
 export const MIN_SECONDS = 18;
 
 /**
+ * Which market an application came from, worked out from the WhatsApp number
+ * rather than asked for.
+ *
+ * Asking would mean a new column, and migrations on the live database have to
+ * be applied by hand here — a step that has silently failed to happen more
+ * than once, with recruitment ads running. The number is already collected and
+ * already required, and it gives the same answer: Pakistani and Filipino
+ * mobile numbers are unmistakable, in both the international form and the
+ * local form people actually type.
+ *
+ * It also sorts every application already in the pile, which a new question
+ * never could — those people have long since filled the form.
+ */
+export const COUNTRY_LABELS: Record<string, string> = {
+  pk: "Pakistan",
+  ph: "Philippines",
+  other: "Somewhere else",
+};
+
+export type CountryValue = "pk" | "ph" | "other";
+
+export function countryFromPhone(whatsapp: string): CountryValue {
+  // Everything that isn't a digit goes: people type +92 300, 0092-300,
+  // (0300) 123 4567 and every spacing in between.
+  const digits = whatsapp.replace(/\D/g, "");
+
+  // Dialling code, with or without the 00 trunk prefix in front of it.
+  const international = digits.replace(/^00/, "");
+  if (international.startsWith("92")) return "pk";
+  if (international.startsWith("63")) return "ph";
+
+  // The local mobile form, which is what most people type. Both countries
+  // write it as eleven digits starting 0, then 3 for Pakistan and 9 for the
+  // Philippines — 0300 1234567 and 0917 123 4567. Requiring the full eleven
+  // keeps landlines and half-typed numbers out of both buckets.
+  if (digits.length === 11 && digits.startsWith("03")) return "pk";
+  if (digits.length === 11 && digits.startsWith("09")) return "ph";
+
+  return "other";
+}
+
+/**
  * Where they saw the post. The channel is a fixed list so answers group
  * cleanly — free text alone gives you "insta", "IG" and "Instagram story" with
  * no way to count them — but the channel on its own is nearly useless. The

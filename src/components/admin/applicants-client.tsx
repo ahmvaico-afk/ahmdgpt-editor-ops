@@ -6,13 +6,14 @@ import { fetcher } from "@/lib/fetcher";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/date";
-import { SOURCE_LABELS } from "@/lib/screening";
+import { COUNTRY_LABELS, SOURCE_LABELS } from "@/lib/screening";
 
 interface Applicant {
   id: string;
   name: string;
   whatsapp: string;
   city: string | null;
+  country: string;
   source: string;
   sourceDetail: string | null;
   sourceTag: string | null;
@@ -55,6 +56,28 @@ const HOURS_LABELS: Record<string, string> = {
   "10plus": "10+h/day",
 };
 
+/**
+ * Which applications have been opened, kept in this browser.
+ *
+ * Deliberately not stored on the server: that would need a column, and
+ * migrations against the live database have to be applied by hand here. Read
+ * state is one person's bookkeeping on one screen, so the browser is a fair
+ * place for it. The cost is that it doesn't follow you to a second device.
+ */
+const SEEN_KEY = "applicants.seen";
+
+function loadSeen(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = window.localStorage.getItem(SEEN_KEY);
+    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+  } catch {
+    // Private windows and blocked site data both throw here. Losing read
+    // marks is survivable; a panel that refuses to render is not.
+    return new Set();
+  }
+}
+
 const TABS = [
   { value: "new", label: "New" },
   { value: "shortlisted", label: "Shortlisted" },
@@ -65,18 +88,53 @@ const TABS = [
 
 export function ApplicantsClient() {
   const [tab, setTab] = useState<string>("new");
+  const [country, setCountry] = useState<string>("");
+  const [unseenOnly, setUnseenOnly] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [seen, setSeen] = useState<Set<string>>(loadSeen);
+
+  const query = new URLSearchParams();
+  if (tab) query.set("status", tab);
+  if (country) query.set("country", country);
 
   const { data, mutate } = useSWR<{
     applicants: Applicant[];
     counts: Record<string, number>;
+    countries: { country: string; count: number }[];
     sources: { source: string; detail: string | null; count: number }[];
-  }>(`/api/admin/applicants${tab ? `?status=${tab}` : ""}`, fetcher, {
+  }>(`/api/admin/applicants?${query.toString()}`, fetcher, {
     refreshInterval: 30000,
   });
 
-  const applicants = data?.applicants ?? [];
+  const everyone = data?.applicants ?? [];
+  const unread = everyone.filter((p) => !seen.has(p.id));
+  const applicants = unseenOnly ? unread : everyone;
+
+  function markSeen(id: string) {
+    setSeen((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev).add(id);
+      try {
+        window.localStorage.setItem(SEEN_KEY, JSON.stringify([...next]));
+      } catch {
+        // Same story as reading it: not worth breaking the page over.
+      }
+      return next;
+    });
+  }
+
+  /**
+   * Opening an application is what marks it read. The row stays where it is
+   * while the unseen filter is on, because the list is only re-filtered on the
+   * next fetch — pulling it out from under the panel just opened would be a
+   * strange thing to watch happen.
+   */
+  function toggleOpen(p: Applicant) {
+    const expanded = open === p.id;
+    setOpen(expanded ? null : p.id);
+    if (!expanded) markSeen(p.id);
+  }
 
   async function remove(p: Applicant) {
     if (
@@ -113,6 +171,30 @@ export function ApplicantsClient() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Country first: the two campaigns are judged separately, so which one
+          you're reading is the outer choice, not a filter inside the list. */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <CountryTab label="All countries" active={country === ""} onClick={() => setCountry("")} />
+        {(data?.countries ?? []).map((c) => (
+          <CountryTab
+            key={c.country}
+            label={`${COUNTRY_LABELS[c.country] ?? c.country} (${c.count})`}
+            active={country === c.country}
+            onClick={() => setCountry(c.country)}
+          />
+        ))}
+        <button
+          onClick={() => setUnseenOnly((v) => !v)}
+          className={`ml-auto rounded-full px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors ${
+            unseenOnly
+              ? "bg-gold text-bg"
+              : "border border-border text-muted hover:text-text"
+          }`}
+        >
+          Unread only ({unread.length})
+        </button>
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-1.5">
           {TABS.map((t) => (
@@ -169,11 +251,16 @@ export function ApplicantsClient() {
           return (
             <div key={p.id} className="flex flex-col">
               <button
-                onClick={() => setOpen(expanded ? null : p.id)}
+                onClick={() => toggleOpen(p)}
                 className="flex flex-wrap items-center justify-between gap-3 p-4 text-left transition-colors hover:bg-white/[0.02]"
               >
                 <div className="min-w-0">
                   <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-text">
+                    {/* A dot rather than bold text: it survives the row
+                        already carrying three or four status pills. */}
+                    {!seen.has(p.id) && (
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold" title="Not read yet" />
+                    )}
                     {p.name}
                     {p.filterReason && (
                       <span className="rounded-full bg-accent/15 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-accent">
@@ -192,7 +279,7 @@ export function ApplicantsClient() {
                     )}
                   </p>
                   <p className="mt-0.5 font-mono text-xs text-muted">
-                    {p.whatsapp}
+                    {p.whatsapp} · {COUNTRY_LABELS[p.country] ?? p.country}
                     {p.city ? ` · ${p.city}` : ""} · {HOURS_LABELS[p.hoursPerDay] ?? p.hoursPerDay}
                     {p.secondsTaken > 0 && ` · took ${p.secondsTaken}s`} ·{" "}
                     {formatDate(p.createdAt)}
@@ -283,6 +370,27 @@ export function ApplicantsClient() {
         })}
       </Card>
     </div>
+  );
+}
+
+function CountryTab({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-full px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider transition-colors ${
+        active ? "bg-text text-bg" : "bg-surface-2 text-muted hover:text-text"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
 

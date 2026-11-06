@@ -241,7 +241,7 @@ export function ApplyClient() {
             <TextInput
               value={a.whatsapp}
               onChange={(v) => set("whatsapp", v)}
-              placeholder="+92 300 1234567"
+              placeholder="e.g. 0300 1234567"
               inputMode="tel"
             />
           </Q>
