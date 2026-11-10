@@ -64,7 +64,11 @@ export function DashboardClient({
 
   async function removeSubmission(id: string) {
     if (!confirm("Remove this video? This can't be undone.")) return;
-    await fetch(`/api/submissions/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/submissions/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      alert(json.error ?? "Could not remove.");
+    }
     refreshAll();
   }
 
@@ -247,21 +251,21 @@ export function DashboardClient({
               </span>
               <StatusBadge status={item.status} />
               {item.status === "submitted" && (
-                <>
-                  <button
-                    onClick={() => setEditTarget(item)}
-                    className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => removeSubmission(item.id)}
-                    aria-label="Remove video"
-                    className="text-muted transition-colors hover:text-accent"
-                  >
-                    ✕
-                  </button>
-                </>
+                <button
+                  onClick={() => setEditTarget(item)}
+                  className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
+                >
+                  Edit
+                </button>
+              )}
+              {item.status !== "paid" && (
+                <button
+                  onClick={() => removeSubmission(item.id)}
+                  aria-label="Remove video"
+                  className="text-muted transition-colors hover:text-accent"
+                >
+                  ✕
+                </button>
               )}
             </div>
           </div>

@@ -6,6 +6,7 @@ import { calculatePriceCents, dollarsToCents } from "@/lib/pricing";
 import { getCurrentBatch } from "@/lib/batch";
 import { notifyDiscord } from "@/lib/discord";
 import { editorWeekSummary } from "@/lib/weekly";
+import { duplicateMessage, findDuplicateLink } from "@/lib/video-link";
 import type { Prisma } from "@/generated/prisma/client";
 
 const PAGE_SIZE = 25;
@@ -80,6 +81,11 @@ export async function POST(request: NextRequest) {
   const style = await prisma.videoStyle.findUnique({ where: { id: data.styleId } });
   if (!style || !style.active) {
     return NextResponse.json({ error: "Selected style is not available." }, { status: 400 });
+  }
+
+  const duplicate = await findDuplicateLink(data.videoLink);
+  if (duplicate) {
+    return NextResponse.json({ error: duplicateMessage(duplicate) }, { status: 409 });
   }
 
   const durationMinutes = data.durationMinutes;

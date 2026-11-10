@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, isQaEditor, requireEditorSession } from "@/lib/auth";
+import { getSession, isQaEditor, requireEditorSession, requireOwnerSession } from "@/lib/auth";
+import { duplicateMessage, findDuplicateLink } from "@/lib/video-link";
 import { updateSubmissionSchema } from "@/lib/validation";
 import { calculatePriceCents } from "@/lib/pricing";
 import { notifyDiscord, statusLine } from "@/lib/discord";
@@ -68,6 +69,13 @@ export async function PATCH(
     }
   }
 
+  if (data.videoLink !== undefined && data.videoLink !== existing.videoLink) {
+    const duplicate = await findDuplicateLink(data.videoLink, id);
+    if (duplicate) {
+      return NextResponse.json({ error: duplicateMessage(duplicate) }, { status: 409 });
+    }
+  }
+
   const update: Prisma.VideoSubmissionUpdateInput = {};
   if (data.status !== undefined) update.status = data.status;
   if (data.title !== undefined) update.title = data.title;
@@ -107,20 +115,30 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
+  // The owner can remove any video, paid or not. (QA can't — owner only.)
+  const owner = await requireOwnerSession();
+  if (owner) {
+    const { count } = await prisma.videoSubmission.deleteMany({ where: { id } });
+    if (count === 0) return NextResponse.json({ error: "Not found." }, { status: 404 });
+    return NextResponse.json({ ok: true });
+  }
+
   const session = await requireEditorSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const { id } = await params;
   const submission = await prisma.videoSubmission.findUnique({ where: { id } });
 
   if (!submission || submission.editorId !== session.editorId) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
-  if (submission.status !== "submitted") {
+  // Paid videos are payout history — only the owner can remove those.
+  if (submission.status === "paid") {
     return NextResponse.json(
-      { error: "Only videos still in 'submitted' status can be removed." },
+      { error: "Paid videos can only be removed by the owner." },
       { status: 400 }
     );
   }

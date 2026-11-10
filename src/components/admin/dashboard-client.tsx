@@ -74,6 +74,24 @@ export function AdminDashboardClient() {
     mutate();
   }
 
+  async function deleteSubmission(item: Submission) {
+    const paidNote =
+      item.status === "paid" ? " It is marked PAID, so it will drop out of the paid totals." : "";
+    if (
+      !confirm(
+        `Delete "${item.title}" by ${item.editor?.name ?? "this editor"}?${paidNote} This can't be undone.`
+      )
+    ) {
+      return;
+    }
+    const res = await fetch(`/api/submissions/${item.id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      alert(json.error ?? "Could not delete.");
+    }
+    mutate();
+  }
+
   async function bulkUpdateStatus(next: "approved" | "paid") {
     const scope = batch ? `Batch ${batch}` : "all batches";
     const from = next === "approved" ? "submitted" : "approved";
@@ -270,6 +288,12 @@ export function AdminDashboardClient() {
                 className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-text"
               >
                 Edit
+              </button>
+              <button
+                onClick={() => deleteSubmission(item)}
+                className="font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-accent"
+              >
+                Delete
               </button>
               {item.status === "submitted" && (
                 <>
