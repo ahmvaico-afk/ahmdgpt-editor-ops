@@ -35,6 +35,13 @@ export function AddVideoModal({
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [workItemId, setWorkItemId] = useState("");
+  // Null means "whatever the current batch is", so the choice follows along if
+  // the owner closes a batch while this modal is sitting open.
+  const [pickedBatch, setPickedBatch] = useState<number | null>(null);
+
+  const previousBatch =
+    currentBatch !== undefined && currentBatch > 1 ? currentBatch - 1 : null;
+  const batchNumber = pickedBatch ?? currentBatch ?? null;
 
   // Timed work the editor has logged but not yet attached to a video.
   const { data: timing, mutate: mutateTiming } = useSWR<{
@@ -80,6 +87,7 @@ export function AddVideoModal({
     setRate("");
     setNotes("");
     setWorkItemId("");
+    setPickedBatch(null);
     setError(null);
   }
 
@@ -105,6 +113,7 @@ export function AddVideoModal({
           // Attaches the time already logged against this video, if the editor
           // ran the clock while working on it.
           ...(workItemId ? { workItemId } : {}),
+          ...(batchNumber !== null ? { batchNumber } : {}),
           ...(selectedStyle.isCustomPricing
             ? { customRatePerMinuteDollars: parseFloat(rate) }
             : {}),
@@ -126,12 +135,29 @@ export function AddVideoModal({
 
   return (
     <Modal open={open} onClose={onClose} title="Add Video">
-      {currentBatch !== undefined && (
+      {currentBatch !== undefined && previousBatch === null && (
         <p className="-mt-2 mb-4 font-mono text-[11px] uppercase tracking-wider text-muted">
           Goes into Batch {currentBatch}
         </p>
       )}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {currentBatch !== undefined && previousBatch !== null && (
+          <div>
+            <Label>Batch</Label>
+            <Select
+              value={String(batchNumber ?? currentBatch)}
+              onChange={(e) => setPickedBatch(Number(e.target.value))}
+            >
+              <option value={currentBatch}>Batch {currentBatch} — current</option>
+              <option value={previousBatch}>Batch {previousBatch} — just closed</option>
+            </Select>
+            <p className="mt-1.5 text-xs text-muted-2">
+              Finishing something from the last batch? Log it there and it&rsquo;ll be paid
+              with that batch.
+            </p>
+          </div>
+        )}
+
         <div>
           <Label>Style</Label>
           <Select value={styleId} onChange={(e) => setSelectedStyleId(e.target.value)} required>

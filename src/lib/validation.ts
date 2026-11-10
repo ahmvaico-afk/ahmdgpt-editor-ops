@@ -22,6 +22,9 @@ export const createSubmissionSchema = z.object({
   notes: z.string().trim().max(2000).optional().or(z.literal("")),
   /// Optional: timed work the editor logged before this record existed.
   workItemId: z.string().min(1).max(64).optional(),
+  /// Which batch to log against. Only the current one and the one just closed
+  /// are accepted; the route decides, since only it knows the current batch.
+  batchNumber: z.number().int().min(1).max(100000).optional(),
 });
 
 export const createClientRuleSchema = z.object({

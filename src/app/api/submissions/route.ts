@@ -114,7 +114,26 @@ export async function POST(request: NextRequest) {
     incrementPerMinuteCents
   );
 
-  const batchNumber = await getCurrentBatch();
+  const currentBatch = await getCurrentBatch();
+  // Work routinely lands a day or two after a batch is closed, so the batch
+  // that just closed stays open to editors. Anything older than that is the
+  // owner's call, from Edit on the dashboard.
+  const openBatches =
+    currentBatch > 1 ? [currentBatch, currentBatch - 1] : [currentBatch];
+  const batchNumber = data.batchNumber ?? currentBatch;
+  if (!openBatches.includes(batchNumber)) {
+    // Rejected rather than quietly moved: a batch is what gets paid out, so
+    // silently filing the video somewhere else would be worse than a retry.
+    return NextResponse.json(
+      {
+        // Covers both directions — a batch long closed and one not started yet.
+        error: `Batch ${batchNumber} isn't open for logging. You can log into ${openBatches
+          .map((b) => `Batch ${b}`)
+          .join(" or ")}.`,
+      },
+      { status: 400 }
+    );
+  }
 
   const submission = await prisma.videoSubmission.create({
     data: {
@@ -151,8 +170,11 @@ export async function POST(request: NextRequest) {
     select: { name: true },
   });
   const name = editor?.name ?? "An editor";
+  // Called out only when it isn't the current batch, so a back-dated video
+  // doesn't slip past unnoticed in the payout for a batch already being closed.
+  const batchNote = batchNumber === currentBatch ? "" : ` · into Batch ${batchNumber}`;
   notifyDiscord(
-    `🎬 **${name}** logged **${data.title}** · ${style.name} · ${durationMinutes} min\n` +
+    `🎬 **${name}** logged **${data.title}** · ${style.name} · ${durationMinutes} min${batchNote}\n` +
       `${name}'s total this week: ${await editorWeekSummary(session.editorId)}`
   );
 
